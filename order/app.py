@@ -27,7 +27,7 @@ atexit.register(close_db_connection)
 def create_order(user_id):
     order_id = db.incr('order_id')
     # create an empty order
-    order = {'order_id': order_id, 'user_id': user_id, 'items': [], 'payment': False, 'total_price': 0}
+    order = {'order_id': order_id, 'user_id': user_id, 'items': [], 'payment': False, 'amount': 0}
     # save the order in the database
     db.hset('orders', order_id, str(order))
     # return the order id
