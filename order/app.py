@@ -35,11 +35,11 @@ def create_order(user_id):
 
 @app.delete('/remove/<order_id>')
 def remove_order(order_id):
-    order = db.hgetall(order_id)
+    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if None in order:
         return "No such order", 401
     else:
-        db.hdel(order)
+        db.hdel('orders', order_id)
 
 
 @app.post('/addItem/<order_id>/<item_id>')
@@ -68,11 +68,11 @@ def remove_item(order_id, item_id):
 
 @app.get('/find/<order_id>')
 def find_order(order_id):
-    order = db.hgetall(order_id)
+    order = ast.literal_eval(db.hgetall('orders', order_id).decode('utf-8'))
     if not order:
         return "No such order", 401
     else:
-        return order, 204
+        return jsonify(order), 204
 
 
 @app.post('/checkout/<order_id>')
