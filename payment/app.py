@@ -5,7 +5,7 @@ from flask import Flask
 import redis
 import requests
 
-gateway_url = os.environ['GATEWAY_URL']
+# gateway_url = os.environ['GATEWAY_URL']
 
 app = Flask("payment-service")
 
@@ -66,14 +66,15 @@ def remove_credit(user_id: str, order_id: str, amount: int):
 
 @app.post('/cancel/<user_id>/<order_id>')
 def cancel_payment(user_id: str, order_id: str):
-    order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
-    if order['payment']:
-        amount = order['amount']
-        user_str = f'user:{user_id}'
-        db.hincrby(user_str, key='credit', amount=amount)
-        return "Success", 202
-    else:
-        return "Fail", 401
+    pass
+    # order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
+    # if order['payment']:
+    #     amount = order['amount']
+    #     user_str = f'user:{user_id}'
+    #     db.hincrby(user_str, key='credit', amount=amount)
+    #     return "Success", 202
+    # else:
+    #     return "Fail", 401
 
 
 @app.post('/status/<user_id>/<order_id>')

@@ -89,11 +89,11 @@ def checkout(order_id):
         items = order['items']
         for item_id in items:
             item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
-            order['total_price'] += int(item['price'])
+            order['amount'] += int(item['price'])
             user_id = order['user_id']
             user = requests.get(f"{gateway_url}/payment/find_user/{user_id}").json()
             credit = user['credit']
-            if credit >= order['total_price']:
+            if credit >= order['amount']:
                 order['payment'] = True
                 db.hset('orders', order_id, str(order))
                 return "Success", 205
