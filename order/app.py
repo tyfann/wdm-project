@@ -4,6 +4,7 @@ import atexit
 
 from flask import Flask, jsonify, Response
 import redis
+import requests
 
 gateway_url = os.environ['GATEWAY_URL']
 
@@ -77,25 +78,24 @@ def find_order(order_id):
 
 @app.post('/checkout/<order_id>')
 def checkout(order_id):
-    pass
-    # order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
-    # if not order:
-    #     return "No such order", 401
-    # elif not order['items']:
-    #     return "No items in the order", 401
-    # elif order['payment']:
-    #     return "Order already checked out", 401
-    # else:
-    #     items = order['items']
-    #     for item_id in items:
-    #         item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
-    #         order['total_price'] += int(item['price'])
-    #         user_id = order['user_id']
-    #         user = requests.get(f"{gateway_url}/payment/find_user/{user_id}").json()
-    #         credit = user['credit']
-    #         if credit >= order['total_price']:
-    #             order['payment'] = True
-    #             db.hset('orders', order_id, str(order))
-    #             return "Success", 205
-    #         else:
-    #             return "Not enough credit", 401
+    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
+    if not order:
+        return "No such order", 401
+    elif not order['items']:
+        return "No items in the order", 401
+    elif order['payment']:
+        return "Order already checked out", 401
+    else:
+        items = order['items']
+        for item_id in items:
+            item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
+            order['total_price'] += int(item['price'])
+            user_id = order['user_id']
+            user = requests.get(f"{gateway_url}/payment/find_user/{user_id}").json()
+            credit = user['credit']
+            if credit >= order['total_price']:
+                order['payment'] = True
+                db.hset('orders', order_id, str(order))
+                return "Success", 205
+            else:
+                return "Not enough credit", 401
