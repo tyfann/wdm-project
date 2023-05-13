@@ -3,7 +3,7 @@ import atexit
 
 from flask import Flask
 import redis
-
+import requests
 
 app = Flask("payment-service")
 
