@@ -1,3 +1,4 @@
+import json
 import os
 import atexit
 
@@ -5,7 +6,7 @@ from flask import Flask
 import redis
 import requests
 
-# gateway_url = os.environ['GATEWAY_URL']
+gateway_url = os.environ['GATEWAY_URL']
 
 app = Flask("payment-service")
 
@@ -54,29 +55,53 @@ def add_credit(user_id: str, amount: int):
 def remove_credit(user_id: str, order_id: str, amount: int):
     user_str = f'user:{user_id}'
     user = db.hmget(user_str, ['credit'])
+    if int(amount) <= 0:
+        return "Amount must be more than 0", 400
     if None in user:
-        return "Fail", 401
+        return "Fail, no such user", 401
     else:
-        if int(user[0]) >= amount:
+        # find order
+        order = json.load(requests.get(f"{gateway_url}/order/find/{order_id}").json())
+        if not order:
+            return "No such order", 400
+        if order['payment']:
+            return "Order has already paid", 401
+        if user >= int(amount):
             db.hincrby(user_str, key='credit', amount=-amount)
-            return "Success", 202
+            return "Success", 203
         else:
-            return "Fail", 402
+            return "Fail, user has not enough credit", 402
 
 
 @app.post('/cancel/<user_id>/<order_id>')
 def cancel_payment(user_id: str, order_id: str):
-    pass
-    # order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
-    # if order['payment']:
-    #     amount = order['amount']
-    #     user_str = f'user:{user_id}'
-    #     db.hincrby(user_str, key='credit', amount=amount)
-    #     return "Success", 202
-    # else:
-    #     return "Fail", 401
+    user_str = f'user:{user_id}'
+    user = db.hmget(user_str, ['user_id'])
+    if not user:
+        return "No such user", 400
+    order = requests.get(f"{gateway_url}/order/find_order/{order_id}").json()
+    if not order:
+        return "No such order", 400
+    if not order['payment']:
+        return "Order's payment is not started yet"
+    else:
+        items = order['items']
+        for i in items:  # todo: check the form of the i in items
+            # add the items back to the stock
+            requests.get(f"{gateway_url}/stock/add/{i}/{1}").json()
+        # add the credit back to the user
+        amount = order['amount']
+        add_credit(user_id, amount)
+        return f"Successfully cancel the payment of user{user_id},order{order_id}", 200
 
 
 @app.post('/status/<user_id>/<order_id>')
 def payment_status(user_id: str, order_id: str):
-    pass
+    user_str = f'user:{user_id}'
+    user = db.hmget(user_str, ['user_id'])
+    if not user:
+        return "No such user", 400
+    order = requests.get(f"{gateway_url}/order/find_order/{order_id}").json()
+    if not order:
+        return "No such order", 400
+    return order['payment'], 201

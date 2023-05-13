@@ -38,18 +38,27 @@ def create_order(user_id):
 def remove_order(order_id):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if None in order:
-        return "No such order", 401
+        return "No such order", 400
     else:
         db.hdel('orders', order_id)
+        return "Successfully delete the order{order_id}", 200
 
 
 @app.post('/addItem/<order_id>/<item_id>')
 def add_item(order_id, item_id):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if None in order:
-        return "No such order", 401
+        return "No such order", 400
+    elif order['payment']:
+        return "Order already checked out", 401
     else:
-        order['items'].append({'item_id': item_id})
+        item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
+        if not item:
+            return "No such item in the stock", 400
+        if item['stock'] <= 0:
+            return "Not enough stock for this item", 400
+        order['amount'] += int(item['price'])
+        order['items'].append({item_id})
         db.hset('orders', order_id, str(order))
         return "Success", 202
 
@@ -58,11 +67,15 @@ def add_item(order_id, item_id):
 def remove_item(order_id, item_id):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if None in order:
-        return "No such order", 401
+        return "No such order", 400
+    if order['payment']:
+        return "Order already checked out", 401
     if len(order['items']) == 0:
         return "No items", 401
     else:
-        order['items'].remove({'item_id': item_id})
+        order['items'].remove({item_id})
+        item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
+        order['amount'] -= int(item['price'])
         db.hset('orders', order_id, str(order))
         return "Success", 203
 
@@ -71,7 +84,7 @@ def remove_item(order_id, item_id):
 def find_order(order_id):
     order = ast.literal_eval(db.hgetall('orders', order_id).decode('utf-8'))
     if not order:
-        return "No such order", 401
+        return "No such order", 400
     else:
         return jsonify(order), 204
 
@@ -80,22 +93,18 @@ def find_order(order_id):
 def checkout(order_id):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if not order:
-        return "No such order", 401
+        return "No such order", 400
     elif not order['items']:
-        return "No items in the order", 401
+        return "No items in the order", 400
     elif order['payment']:
         return "Order already checked out", 401
     else:
-        items = order['items']
-        for item_id in items:
-            item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
-            order['amount'] += int(item['price'])
-            user_id = order['user_id']
-            user = requests.get(f"{gateway_url}/payment/find_user/{user_id}").json()
-            credit = user['credit']
-            if credit >= order['amount']:
-                order['payment'] = True
-                db.hset('orders', order_id, str(order))
-                return "Success", 205
-            else:
-                return "Not enough credit", 401
+        user_id = order['user_id']
+        user = requests.get(f"{gateway_url}/payment/find_user/{user_id}").json()
+        credit = user['credit']
+        if credit >= order['amount']:
+            order['payment'] = True
+            db.hset('orders', order_id, str(order))
+            return "Success", 205
+        else:
+            return "Not enough credit", 400
