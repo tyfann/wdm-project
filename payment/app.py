@@ -61,13 +61,13 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         return "Fail, no such user", 401
     else:
         # find order
-        order = requests.get(f"{gateway_url}/order/find/{order_id}").json()
+        order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
         if not order:
             return "No such order", 400
         if order['payment']:
             return "Order has already paid", 401
-        if user >= int(amount):
-            db.hincrby(user_str, key='credit', amount=-amount)
+        if int(user[0]) >= int(amount):
+            db.hincrby(user_str, key='credit', amount=-1*int(amount))
             return "Success", 203
         else:
             return "Fail, user has not enough credit", 402
@@ -79,7 +79,7 @@ def cancel_payment(user_id: str, order_id: str):
     user = db.hmget(user_str, ['user_id'])
     if not user:
         return "No such user", 400
-    order = requests.get(f"{gateway_url}/order/find_order/{order_id}").json()
+    order = requests.get(f"{gateway_url}/orders/find_order/{order_id}").json()
     if not order:
         return "No such order", 400
     if not order['payment']:
@@ -101,7 +101,7 @@ def payment_status(user_id: str, order_id: str):
     user = db.hmget(user_str, ['user_id'])
     if not user:
         return "No such user", 400
-    order = requests.get(f"{gateway_url}/order/find_order/{order_id}").json()
+    order = requests.get(f"{gateway_url}/orders/find_order/{order_id}").json()
     if not order:
         return "No such order", 400
     return order['payment'], 201

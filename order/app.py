@@ -56,10 +56,10 @@ def add_item(order_id, item_id):
         item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
         if not item:
             return "No such item in the stock", 400
-        if item['stock'] <= 0:
+        if int(item['stock']) <= 0:
             return "Not enough stock for this item", 400
-        order['amount'] += int(item['price'])
-        order['items'].append({item_id})
+        order['amount'] = int(order['amount'])+int(item['price'])
+        order['items'].append(item_id)
         db.hset('orders', order_id, str(order))
         return "Success", 202
 
@@ -83,7 +83,7 @@ def remove_item(order_id, item_id):
 
 @app.get('/find/<order_id>')
 def find_order(order_id):
-    order = ast.literal_eval(db.hgetall('orders', order_id).decode('utf-8'))
+    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if not order:
         return "No such order", 400
     else:
@@ -105,11 +105,10 @@ def checkout(order_id):
         credit = user['credit']
         total_amount = order['amount']
         items = order['items']
-        print(items)
         if credit >= total_amount:
+            requests.post(f"{gateway_url}/payment/pay/{user_id}/{order_id}/{total_amount}")
             for i in items:
                 requests.post(f"{gateway_url}/stock/subtract/{i}/{1}")
-            requests.post(f"{gateway_url}/payment/pay/{user_id}/{order_id}/{int(total_amount)}")
             order['payment'] = True
             db.hset('orders', order_id, str(order))
             return "Success", 201
