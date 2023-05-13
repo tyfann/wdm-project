@@ -1,4 +1,5 @@
 import ast
+import json
 import os
 import atexit
 
@@ -86,7 +87,7 @@ def find_order(order_id):
     if not order:
         return "No such order", 400
     else:
-        return jsonify(order), 204
+        return jsonify(order), 200
 
 
 @app.post('/checkout/<order_id>')
@@ -102,9 +103,15 @@ def checkout(order_id):
         user_id = order['user_id']
         user = requests.get(f"{gateway_url}/payment/find_user/{user_id}").json()
         credit = user['credit']
-        if credit >= order['amount']:
+        total_amount = order['amount']
+        items = order['items']
+        print(items)
+        if credit >= total_amount:
+            for i in items:
+                requests.post(f"{gateway_url}/stock/subtract/{i}/{1}")
+            requests.post(f"{gateway_url}/payment/pay/{user_id}/{order_id}/{int(total_amount)}")
             order['payment'] = True
             db.hset('orders', order_id, str(order))
-            return "Success", 205
+            return "Success", 201
         else:
             return "Not enough credit", 400
