@@ -9,6 +9,7 @@ import requests
 gateway_url = os.environ['GATEWAY_URL']
 
 app = Flask("payment-service")
+app.debug= True
 
 db: redis.Redis = redis.Redis(host=os.environ['REDIS_HOST'],
                               port=int(os.environ['REDIS_PORT']),
@@ -61,13 +62,13 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         return "Fail, no such user", 401
     else:
         # find order
-        order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
-        if not order:
-            return "No such order", 400
-        if order['payment']:
-            return "Order has already paid", 401
+        # order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
+        # if not order:
+        #     return "No such order", 400
+        # if order['payment']:
+        #     return "Order has already paid", 401
         if int(user[0]) >= int(amount):
-            db.hincrby(user_str, key='credit', amount=-1*int(amount))
+            db.hincrby(user_str, key='credit', amount=-int(amount))
             return "Success", 203
         else:
             return "Fail, user has not enough credit", 402
@@ -86,7 +87,7 @@ def cancel_payment(user_id: str, order_id: str):
         return "Order's payment is not started yet"
     else:
         items = order['items']
-        for i in items:  # todo: check the form of the i in items
+        for i in items:
             # add the items back to the stock
             requests.post(f"{gateway_url}/stock/add/{i}/{1}").json()
         # add the credit back to the user

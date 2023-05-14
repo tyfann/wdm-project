@@ -59,6 +59,9 @@ def find_order(order_id: str) -> dict:
 def checkout_order(order_id: str) -> requests.Response:
     return requests.post(f"{ORDER_URL}/orders/checkout/{order_id}")
 
+def remove_credit(user_id: str, order_id: str, amount: float) -> int:
+    return requests.post(f"{PAYMENT_URL}/payment/pay/{user_id}/{order_id}/{amount}").status_code
+
 
 ########################################################################################################################
 #   STATUS CHECKS
