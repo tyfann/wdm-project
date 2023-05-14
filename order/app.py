@@ -25,8 +25,8 @@ atexit.register(close_db_connection)
 
 
 @app.post('/create/<user_id>')
-def create_order(user_id):
-    order_id = db.incr('order_id')
+def create_order(user_id: str):
+    order_id = str(db.incr('order_id'))
     # create an empty order
     order = {'order_id': order_id, 'user_id': user_id, 'items': [], 'payment': False, 'amount': 0}
     # save the order in the database
@@ -36,7 +36,7 @@ def create_order(user_id):
 
 
 @app.delete('/remove/<order_id>')
-def remove_order(order_id):
+def remove_order(order_id: str):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if None in order:
         return "No such order", 400
@@ -46,7 +46,7 @@ def remove_order(order_id):
 
 
 @app.post('/addItem/<order_id>/<item_id>')
-def add_item(order_id, item_id):
+def add_item(order_id: str, item_id: str):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if None in order:
         return "No such order", 400
@@ -58,14 +58,14 @@ def add_item(order_id, item_id):
             return "No such item in the stock", 400
         if int(item['stock']) <= 0:
             return "Not enough stock for this item", 400
-        order['amount'] = int(order['amount'])+int(item['price'])
+        order['amount'] = int(order['amount']) + int(item['price'])
         order['items'].append(item_id)
         db.hset('orders', order_id, str(order))
         return "Success", 202
 
 
 @app.delete('/removeItem/<order_id>/<item_id>')
-def remove_item(order_id, item_id):
+def remove_item(order_id: str, item_id: str):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if None in order:
         return "No such order", 400
@@ -82,7 +82,7 @@ def remove_item(order_id, item_id):
 
 
 @app.get('/find/<order_id>')
-def find_order(order_id):
+def find_order(order_id: str):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if not order:
         return "No such order", 400
@@ -91,7 +91,7 @@ def find_order(order_id):
 
 
 @app.post('/checkout/<order_id>')
-def checkout(order_id):
+def checkout(order_id: str):
     order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
     if not order:
         return "No such order", 400

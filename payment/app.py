@@ -61,16 +61,31 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         return "Fail, no such user", 401
     else:
         # find order
-        order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
-        if not order:
-            return "No such order", 400
-        if order['payment']:
-            return "Order has already paid", 401
-        if int(user[0]) >= int(amount):
-            db.hincrby(user_str, key='credit', amount=-1*int(amount))
-            return "Success", 203
-        else:
-            return "Fail, user has not enough credit", 402
+        # with requests.get(f"{gateway_url}/orders/find/{order_id}") as response:
+        #     order = response.json()
+        #     if not order:
+        #         return "No such order", 400
+        #     if order['payment']:
+        #         return "Order has already paid", 401
+        #     response.close()
+            if int(user[0]) >= int(amount):
+                db.hincrby(user_str, key='credit', amount=-1 * int(amount))
+                # response.close()
+                return "Success", 203
+            else:
+                # response.close()
+                return "Fail, user has not enough credit", 402
+
+        # order = requests.get(f"{order_url}/find/{order_id}").json()
+        # if not order:
+        #     return "No such order", 400
+        # if order['payment']:
+        #     return "Order has already paid", 401
+        # if int(user[0]) >= int(amount):
+        #     db.hincrby(user_str, key='credit', amount=-1*int(amount))
+        #     return "Success", 203
+        # else:
+        #     return "Fail, user has not enough credit", 402
 
 
 @app.post('/cancel/<user_id>/<order_id>')
@@ -86,7 +101,7 @@ def cancel_payment(user_id: str, order_id: str):
         return "Order's payment is not started yet"
     else:
         items = order['items']
-        for i in items:  # todo: check the form of the i in items
+        for i in items:
             # add the items back to the stock
             requests.post(f"{gateway_url}/stock/add/{i}/{1}").json()
         # add the credit back to the user
