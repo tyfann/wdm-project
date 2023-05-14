@@ -27,6 +27,8 @@ services:
   order-db:
     image: redis:latest
     command: redis-server --requirepass redis --maxmemory 512mb
+#    ports:
+#      - 8001:6379
 
   stock-service:
     build: ./stock
@@ -40,6 +42,8 @@ services:
   stock-db:
     image: redis:latest
     command: redis-server --requirepass redis --maxmemory 512mb
+#    ports:
+#      - 8002:6379
 
   payment-service:
     build: ./payment
@@ -53,3 +57,5 @@ services:
   payment-db:
     image: redis:latest
     command: redis-server --requirepass redis --maxmemory 512mb
+#    ports:
+#      - 8003:6379

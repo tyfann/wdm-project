@@ -9,6 +9,7 @@ import requests
 gateway_url = os.environ['GATEWAY_URL']
 
 app = Flask("payment-service")
+app.debug = True
 
 db: redis.Redis = redis.Redis(host=os.environ['REDIS_HOST'],
                               port=int(os.environ['REDIS_PORT']),
@@ -68,24 +69,24 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         #     if order['payment']:
         #         return "Order has already paid", 401
         #     response.close()
-            if int(user[0]) >= int(amount):
-                db.hincrby(user_str, key='credit', amount=-1 * int(amount))
-                # response.close()
-                return "Success", 203
-            else:
-                # response.close()
-                return "Fail, user has not enough credit", 402
+        if int(user[0]) >= int(amount):
+            db.hincrby(user_str, key='credit', amount=-1 * int(amount))
+            # response.close()
+            return "Success", 203
+        else:
+            # response.close()
+            return "Fail, user has not enough credit", 402
 
-        # order = requests.get(f"{order_url}/find/{order_id}").json()
-        # if not order:
-        #     return "No such order", 400
-        # if order['payment']:
-        #     return "Order has already paid", 401
-        # if int(user[0]) >= int(amount):
-        #     db.hincrby(user_str, key='credit', amount=-1*int(amount))
-        #     return "Success", 203
-        # else:
-        #     return "Fail, user has not enough credit", 402
+    # order = requests.get(f"{gateway_url}/orders/find/{order_id}").json()
+    # if not order:
+    #     return "No such order", 400
+    # if order['payment']:
+    #     return "Order has already paid", 401
+    # if int(user[0]) >= int(amount):
+    #     db.hincrby(user_str, key='credit', amount=-1*int(amount))
+    #     return "Success", 203
+    # else:
+    #     return "Fail, user has not enough credit", 402
 
 
 @app.post('/cancel/<user_id>/<order_id>')
