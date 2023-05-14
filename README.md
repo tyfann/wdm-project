@@ -2,7 +2,18 @@
 
 Basic project structure with Python's Flask and Redis. 
 **You are free to use any web framework in any language and any database you like for this project.**
-
+### Contribution
+* `stock`
+  Zhiqiang Lei: accomplished app.py
+* `payment`
+  Yufan Tang: accomplished create_item(); find_user(); add_credit(); remove_credit();
+  Gefei Zhu: accomplished remove_credit(); cancel_payment(); payment_status();
+* `order`
+  Gefei Zhu: accomplished create_order(); remove_order(); add_item(); remove_item(); find_order(); checkout();
+  Yufan Tang: checkout();
+* `k8s`
+  Zihan Wang: build the connection of k8s
+  
 ### Project structure
 
 * `env`
