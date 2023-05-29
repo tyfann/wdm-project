@@ -30,20 +30,20 @@ def initial_connection(db, param):
     except Exception as error_message:
         return make_response(jsonify(str(error_message) + "Error happens when executing the query"), 500)
 
-def getOne(db, param, connector = None):
+def get_one(db, param, connector = None):
     pass
 
-def getAll(db, param, connector):
+def get_all(db, param, connector):
     pass
 
-def getStatus(db, param, connector):
+def get_status(db, param, connector):
     pass
 
-def startTransaction():
+def start_transaction():
     pass
 
-def cancelTransaction(connector):
+def cancel_transaction(connector):
     pass
 
-def committTransaction(connector):
+def committ_transaction(connector):
     pass
