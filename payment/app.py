@@ -6,6 +6,8 @@ from flask import Flask
 import redis
 import requests
 
+import cmi
+
 # TODO: This file does not need to connect to DB directly, just send your SQL query to CMI, and CMI will send the
 #  query to db_connector such that the query is executed in the DB
 
