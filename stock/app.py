@@ -7,17 +7,8 @@ import redis
 
 app = Flask("stock-service")
 
-db: redis.Redis = redis.Redis(host=os.environ['REDIS_HOST'],
-                              port=int(os.environ['REDIS_PORT']),
-                              password=os.environ['REDIS_PASSWORD'],
-                              db=int(os.environ['REDIS_DB']))
-
-
-def close_db_connection():
-    db.close()
-
-
-atexit.register(close_db_connection)
+# TODO: This file does not need to connect to DB directly, just send your SQL query to CMI, and CMI will send the
+#  query to db_connector such that the query is executed in the DB
 
 
 @app.post('/item/create/<price>')
