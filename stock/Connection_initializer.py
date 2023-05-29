@@ -5,6 +5,10 @@ from flask import Response, make_response, jsonify
 db_url = ""
 pool = pool.SimpleConnectionPool(1, 100, db_url)
 
+DONE_TRUE = ""
+DONE_FALSE = ""
+
+
 def query(db, param, connection):
     if(connection):
         address, id = connection
@@ -33,4 +37,13 @@ def getAll(db, param, connector):
     pass
 
 def getStatus(db, param, connector):
+    pass
+
+def startTransaction():
+    pass
+
+def cancelTransaction(connector):
+    pass
+
+def committTransaction(connector):
     pass
