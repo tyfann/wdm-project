@@ -181,3 +181,8 @@ def checkout(order_id: str):
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
     return cni.success_response
+
+
+if __name__ == '__main__':
+    # host 0.0.0.0 to listen to all ip's
+    app.run(host='0.0.0.0', port=5000)
