@@ -33,7 +33,7 @@ def create_user():
 
 @app.get('/find_user/<user_id>')
 def find_user(user_id: int):
-    res, status = cni.get_one("SELECT user_id, credit FROM accounts WHERE user_id=%s",
+    res, status = cni.get_response("SELECT user_id, credit FROM accounts WHERE user_id=%s",
                               [user_id], g.connection)
     if status == 200:
         res["credit"] = float(res["credit"])
@@ -42,8 +42,8 @@ def find_user(user_id: int):
 
 @app.post('/add_funds/<user_id>/<amount>')
 def add_credit(user_id: str, amount: int):
-    return cni.get_status("UPDATE accounts SET credit = credit + %s WHERE user_id=%s AND credit + %s >= credit",
-                          [amount, user_id, amount], g.connection)
+    return cni.get_response("UPDATE accounts SET credit = credit + %s WHERE user_id=%s AND credit + %s >= credit",
+                            [amount, user_id, amount], g.connection)
 
 
 @app.post('/pay/<user_id>/<order_id>/<amount>')
@@ -52,7 +52,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         g.connectionStr = cni.start_transaction()
         g.connection = tuple(g.connectionStr.split(':'))
 
-    _, status_code = cni.get_status(
+    _, status_code = cni.get_response(
         "UPDATE accounts SET credit = credit - CAST(%s AS NUMERIC) WHERE user_id=%s AND credit - CAST(%s AS NUMERIC) >= 0 AND CAST(%s AS NUMERIC) >= 0",
         [amount, user_id, amount, amount], g.connection)
     if status_code != 200:
@@ -60,7 +60,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
             cni.cancel_transaction(g.connection)
         return cni.fail_response
 
-    _, status_code = cni.get_status(
+    _, status_code = cni.get_response(
         "UPDATE orders SET paid = TRUE WHERE order_id=%s AND user_id=%s AND paid = FALSE",
         [order_id, user_id], g.connection)
     if status_code != 200:
@@ -79,7 +79,7 @@ def cancel_payment(user_id: str, order_id: str):
         g.connectionStr = cni.start_transaction()
         g.connection = tuple(g.connectionStr.split(':'))
 
-    _, status_code = cni.get_status(
+    _, status_code = cni.get_response(
         "UPDATE accounts SET credit = credit + CAST((SELECT SUM(unit_price) FROM order_details WHERE order_id=%s) AS INTEGER) WHERE user_id=%s",
         [order_id, user_id], g.connection)
     if status_code != 200:
@@ -87,8 +87,8 @@ def cancel_payment(user_id: str, order_id: str):
             cni.cancel_transaction(g.connection)
         return cni.fail_response
 
-    _, status_code = cni.get_status("UPDATE orders SET paid = FALSE WHERE order_id=%s",
-                                    [order_id], g.connection)
+    _, status_code = cni.get_response("UPDATE orders SET paid = FALSE WHERE order_id=%s",
+                                      [order_id], g.connection)
     if status_code != 200:
         if not g.already_using_connection_manager:
             cni.cancel_transaction(g.connection)
@@ -102,7 +102,7 @@ def cancel_payment(user_id: str, order_id: str):
 # Changed to GET based on project document
 @app.get('/status/<user_id>/<order_id>')
 def payment_status(user_id: str, order_id: str):
-    return cni.get_one("SELECT paid FROM orders WHERE order_id=%s",
+    return cni.get_response("SELECT paid FROM orders WHERE order_id=%s",
                        [order_id], g.connection)
 
 

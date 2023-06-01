@@ -54,11 +54,12 @@ def initial_connection(db_query, param):
 
 
 
-def get_one(db_query, param, connector = None):
-    return get_status(db_query, param, connector)
+# def get_one(db_query, param, connector = None):
+#     return get_response(db_query, param, connector)
 
-def get_status(db_query, param, connector):
-    response = query(f"{db_query} RETURNING TRUE AS done;", param, connector)
+def get_response(db_query, param, connector):
+    if db_query[0] != 'S':
+        response = query(f"{db_query} RETURNING TRUE AS done;", param, connector)
     if response.status_code == 200:
         return response.json()[1], 200
     return fail_response
