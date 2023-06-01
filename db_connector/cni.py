@@ -51,7 +51,9 @@ def initial_connection(db_query, param):
 
 def get_response(db_query, param, connector):
     if db_query[0] != 'S':
-        response = query(f"{db_query} RETURNING TRUE AS done;", param, connector)
+        db_query = f"{db_query} RETURNING TRUE AS done;"
+    response = query(db_query, param, connector)
+
     if response.status_code == 200:
         return response.json()[1], 200
     return make_response(jsonify({"Status: Failure"}), 400)
