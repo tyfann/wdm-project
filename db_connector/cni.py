@@ -7,11 +7,6 @@ URL = "http://connection-manager-service:5000"
 db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
 pool = pool.SimpleConnectionPool(1, 30, db_url)
 
-success_response = Response(response='{"Done":success}', status=200, mimetype="application/json")
-fail_response = Response(response='{"Done":failure}', status=400, mimetype="application/json")
-
-
-
 def query(db_query, param, connection):
     if(connection):
         address, id = connection
@@ -54,14 +49,14 @@ def initial_connection(db_query, param):
 
 
 
-def get_one(db_query, param, connector = None):
-    return get_status(db_query, param, connector)
+def get_response(db_query, param, connector):
+    if db_query[0] != 'S':
+        db_query = f"{db_query} RETURNING TRUE AS done;"
+    response = query(db_query, param, connector)
 
-def get_status(db_query, param, connector):
-    response = query(f"{db_query} RETURNING TRUE AS done;", param, connector)
     if response.status_code == 200:
         return response.json()[1], 200
-    return fail_response
+    return make_response(jsonify({"Status: Failure"}), 400)
 
 def start_transaction():
     response = requests.get(f"{URL}/start_trans")
