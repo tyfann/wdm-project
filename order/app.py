@@ -5,7 +5,7 @@ from flask import Flask, jsonify, Response, g, request
 import requests
 import random
 
-from db_connector import cni
+import cni
 
 app = Flask("order-service")
 

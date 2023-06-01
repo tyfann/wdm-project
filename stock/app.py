@@ -5,7 +5,7 @@ from random import random
 from flask import Flask, jsonify, request, g
 import redis
 
-from db_connector import cni
+import cni
 
 app = Flask("stock-service")
 

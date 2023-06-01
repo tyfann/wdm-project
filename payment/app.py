@@ -3,7 +3,7 @@ import requests
 import random
 import re
 
-from db_connector import cni
+import cni
 
 app = Flask("payment-service")
 
