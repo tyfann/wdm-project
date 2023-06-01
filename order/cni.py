@@ -8,12 +8,11 @@ db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 pool = pool.SimpleConnectionPool(1, 30, db_url)
 
 def query(db_query, param, connection):
-    if(connection):
+    if (connection):
         address, id = connection
         return requests.post(f"http://{address}:5000/exec/{id}", json={"db": db_query, "param": param})
     else:
-       initial_connection(db_query, param)
-
+        return initial_connection(db_query, param)
 
 def initial_connection(db_query, param):
     try:
@@ -22,7 +21,7 @@ def initial_connection(db_query, param):
         print(error_message)
         return make_response(jsonify(str(error_message) + "Error happens when executing the query"), 500)
 
-    cursor = connection.crusor()
+    cursor = connection.cursor()
 
     try:
         cursor.execute(db_query, param)

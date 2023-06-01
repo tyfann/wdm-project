@@ -1,8 +1,8 @@
-import requests
+
 from flask import Flask, request, jsonify, make_response
 from psycopg2 import pool
 import os
-import random
+
 
 app = Flask(__name__)
 ip = os.getenv('MY_POD_IP')
@@ -23,7 +23,7 @@ def start_transaction():
 
 
 # This function should receive the SQL sent from CMI and execute it
-@app.post('exec/<conn_id>')
+@app.post('/exec/<conn_id>')
 def execute_transaction(conn_id):
     # We get the query here
     connection = connections[conn_id]
@@ -46,7 +46,7 @@ def execute_transaction(conn_id):
     return make_response(jsonify(results), 200)
 
 
-@app.post('commit/<conn_id>')
+@app.post('/commit/<conn_id>')
 def commit_transaction(conn_id):
     connection = connections[conn_id]
     connection.commit()
