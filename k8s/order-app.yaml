@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: order
-          image: ghcr.io/desmond766/order:0.0.1
+          image: order:latest
 
           resources:
             limits:
@@ -41,15 +41,9 @@ spec:
           ports:
             - containerPort: 5000
           env:
-            - name: USER_SERVICE_URL
-              value: "user-service"
             - name: STOCK_SERVICE_URL
               value: "stock-service"
-            - name: REDIS_HOST
-              value: redis-master
-            - name: REDIS_PORT
-              value: '6379'
-            - name: REDIS_PASSWORD
-              value: "redis"
-            - name: REDIS_DB
-              value: "0"
+            - name: DATABASE_MANAGER_URL
+              value: "connection-manager"
+            - name: PAYMENT_SERVICE_URL
+              value: "payment-service"
