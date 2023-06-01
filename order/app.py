@@ -59,7 +59,7 @@ def remove_order(order_id: str):
         return cni.fail_response
 
     if not g.cni_connected:
-        cni.committ_transaction(g.connection)
+        cni.commit_transaction(g.connection)
     return cni.success_response
 
 
@@ -92,7 +92,7 @@ def add_item(order_id: str, item_id: str):
         return cni.fail_response
 
     if not g.cni_connected:
-        cni.committ_transaction(g.connection)
+        cni.commit_transaction(g.connection)
     return cni.success_response
 
 
@@ -128,7 +128,7 @@ def remove_item(order_id: str, item_id: str):
         return cni.fail_response
 
     if not g.cni_connected:
-        cni.committ_transaction(g.connection)
+        cni.commit_transaction(g.connection)
     return cni.success_response
 
 
@@ -179,5 +179,5 @@ def checkout(order_id: str):
             return cni.fail_response
 
     if not g.cni_connected:
-        cni.committ_transaction(g.connection)
+        cni.commit_transaction(g.connection)
     return cni.success_response

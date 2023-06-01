@@ -75,7 +75,7 @@ def cancel_transaction(connector):
         pass
     return
 
-def committ_transaction(connector):
+def commit_transaction(connector):
     address, connector_id = connector
     while requests.post(f"http://{address}:5000/commit/{connector_id}").status_code != 200:
         pass
