@@ -1,120 +1,188 @@
 import ast
-import json
-import os
-import atexit
 
-from flask import Flask, jsonify, Response
-import redis
+from flask import Flask, jsonify, Response, g, request
+
 import requests
+import random
+
+from db_connector import cni
 
 app = Flask("order-service")
 
-# TODO: This file does not need to connect to DB directly, just send your SQL query to CMI, and CMI will send the
+stock_url = "http://stock-service:5000"
+payment_url = "http://payment-service:5000"
+
+
+# TODO: This file does not need to connect to DB directly, just send your SQL query to connectionI, and connectionI will send the
 #  query to db_connector such that the query is executed in the DB
+@app.before_request
+def before_request():
+    g.connectionStr = request.headers.get("connection")
+    if g.connectionStr is not None:
+        g.cni_connected = True
+        g.connection = tuple(g.connectionStr.split(':'))
+    else:
+        g.cni_connected = False
+        g.connection = None
+
+
 @app.post('/create/<user_id>')
 def create_order(user_id: str):
-    order_id = str(db.incr('order_id'))
-    # create an empty order
-    order = {'order_id': order_id, 'user_id': user_id, 'items': [], 'payment': False, 'amount': 0}
-    # save the order in the database
-    db.hset('orders', order_id, str(order))
-    # return the order id
-    return jsonify(order), 200
+    while True:
+        order_id = random.randrange(0, 9223372036854775807)  # Cockroachdb max and min INT values (64-bit)
+        response = cni.query(
+            "INSERT INTO orders (order_id, user_id, paid, total_cost) VALUES (%s,%s,FALSE,0) RETURNING order_id",
+            [order_id, user_id], g.connection)
+        if response.status_code == 200:
+            result = response.json()
+            if len(result) == 1:
+                return result[0], 200
 
 
 @app.delete('/remove/<order_id>')
 def remove_order(order_id: str):
-    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
-    if None in order:
-        return "No such order", 400
-    else:
-        db.hdel('orders', order_id)
-        return "Successfully delete the order{order_id}", 200
+    if not g.cni_connected:
+        g.connectionStr = cni.start_transaction()
+        g.connection = tuple(g.connectionStr.split(':'))
+
+    # order_details to store the information of one order (order_id,item_id,amount)
+    _, status_code = cni.get_response("DELETE FROM order_details WHERE order_id=%s", [order_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return
+
+    _, status_code = cni.get_response("DELETE FROM orders WHERE order_id=%s", [order_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+
+    if not g.cni_connected:
+        cni.commit_transaction(g.connection)
+    return cni.success_response
 
 
 @app.post('/addItem/<order_id>/<item_id>')
 def add_item(order_id: str, item_id: str):
-    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
-    if None in order:
-        return "No such order", 400
-    elif order['payment']:
-        return "Order already checked out", 401
-    else:
-        item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
-        if not item:
-            return "No such item in the stock", 400
-        if int(item['stock']) <= 0:
-            return "Not enough stock for this item", 400
-        order['amount'] = int(order['amount']) + int(item['price'])
-        order['items'].append(item_id)
-        db.hset('orders', order_id, str(order))
-        return "Success", 202
+    if not g.cni_connected:
+        g.connectionStr = cni.start_transaction()
+        g.connection = tuple(g.connectionStr.split(':'))
+
+    data, status_code = cni.get_response(
+        "INSERT INTO order_details (order_id, item_id, count) VALUES (%s,%s,1) ON CONFLICT (order_id, item_id) DO UPDATE SET count = order_details.count+1",
+        [order_id, item_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+
+    response = requests.get(f"{stock_url}/find/{item_id}", headers={"connection": g.connectionStr})
+    if response.status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+    price = response.json()["price"]  # todo!确定payment里面的名称
+
+    data, status_code = cni.get_response("UPDATE orders SET total_cost=total_cost+%s WHERE order_id=%s",
+                                         [price, order_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+
+    if not g.cni_connected:
+        cni.commit_transaction(g.connection)
+    return cni.success_response
 
 
 @app.delete('/removeItem/<order_id>/<item_id>')
 def remove_item(order_id: str, item_id: str):
-    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
-    if None in order:
-        return "No such order", 400
-    if order['payment']:
-        return "Order already checked out", 401
-    if len(order['items']) == 0:
-        return "No items", 401
-    else:
-        order['items'].remove({item_id})
-        item = requests.get(f"{gateway_url}/stock/find/{item_id}").json()
-        order['amount'] -= int(item['price'])
-        db.hset('orders', order_id, str(order))
-        return "Success", 203
+    if not g.cni_connected:
+        g.connectionStr = cni.start_transaction()
+        g.connection = tuple(g.connectionStr.split(':'))
+
+    data, status_code = cni.get_response(
+        "UPDATE order_details SET count=count-1 WHERE order_id=%s AND item_id=%s RETURNING count",
+        [order_id, item_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+    if data["count"] == 0:
+        cni.query("DELETE FROM order_details WHERE order_id=%s AND item_id=%s",
+                  [order_id, item_id], g.connection)
+
+    response = requests.get(f"{stock_url}/find/{item_id}", headers={"connection": g.connectionStr})
+    if response.status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+    price = response.json()["price"]
+
+    data, status_code = cni.get_response("UPDATE orders SET total_cost=total_cost-%s WHERE order_id=%s",
+                                         [price, order_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+
+    if not g.cni_connected:
+        cni.commit_transaction(g.connection)
+    return cni.success_response
 
 
 @app.get('/find/<order_id>')
 def find_order(order_id: str):
-    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
-    if not order:
-        return "No such order", 400
-    else:
-        return jsonify(order), 200
+    return cni.get_response(
+        "SELECT %s AS order_id, (SELECT paid FROM orders WHERE order_id=%s) AS paid, coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items, (SELECT user_id FROM orders WHERE order_id=%s) AS user_id, (SELECT total_cost FROM orders WHERE order_id=%s) AS total_cost FROM order_details WHERE order_id=%s",
+        [order_id, order_id, order_id, order_id], g.connection)
 
 
 # checkout函数中应当判断用户需要购买的item在stock中是否大于等于当前的购买需求，如果没满足，则需要返回checkout失败的信息
 @app.post('/checkout/<order_id>')
 def checkout(order_id: str):
-    order = ast.literal_eval(db.hget('orders', order_id).decode('utf-8'))
-    if not order:
-        return "No such order", 400
-    elif not order['items']:
-        return "No items in the order", 401
-    elif order['payment']:
-        return "Order already checked out", 402
-    else:
-        item_counts = {}
-        stocks = {}
-        items = order['items']
-        for i in items:
-            if i in item_counts:
-                item_counts[i] += 1
-            else:
-                item_counts[i] = 1
-            item = requests.get(f"{gateway_url}/stock/find/{i}").json()
-            stocks[i] = item['stock']
-            if not item or int(item['stock']) < 1:
-                return "Checkout failed: Item '{}' is out of stock.".format(i), 404
+    if not g.cni_connected:
+        g.connectionStr = cni.start_transaction()
+        g.connection = tuple(g.connectionStr.split(':'))
 
-        for item, count in item_counts.items():
-            if count > int(stocks[item]):
-                return "Checkout failed: Item '{}' is out of stock.".format(item), 404
+    data, status_code = cni.get_response("SELECT user_id, total_cost FROM orders WHERE order_id=%s",
+                                    [order_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+    user_id = data["user_id"]
+    total_price = data["total_cost"]
 
-        user_id = order['user_id']
-        user = requests.get(f"{gateway_url}/payment/find_user/{user_id}").json()
-        credit = user['credit']
-        amount = order['amount']
-        if credit >= amount:
-            requests.post(f"{gateway_url}/payment/pay/{user_id}/{order_id}/{amount}")
-            for i in items:
-                requests.post(f"{gateway_url}/stock/subtract/{i}/{1}")
-            order['payment'] = True
-            db.hset('orders', order_id, str(order))
-            return "Success", 201
-        else:
-            return "Not enough credit", 403
+    response = requests.post(f"{payment_url}/pay/{user_id}/{order_id}/{total_price}",
+                             headers={"connection": g.connectionStr})
+    if response.status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+
+    data, status_code = cni.get_response(
+        "SELECT coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items FROM order_details WHERE order_id=%s",
+        [order_id], g.connection)
+    if status_code != 200:
+        if not g.cni_connected:
+            cni.cancel_transaction(g.connection)
+        return cni.fail_response
+    items = data["items"]
+
+    for item_id, count in items.items():
+        response = requests.post(f"{stock_url}/subtract/{item_id}/{count}", headers={"connection": g.connectionStr})
+        if response.status_code != 200:
+            if not g.cni_connected:
+                cni.cancel_transaction(g.connection)
+            return cni.fail_response
+
+    if not g.cni_connected:
+        cni.commit_transaction(g.connection)
+    return cni.success_response
+
+
+if __name__ == '__main__':
+    # host 0.0.0.0 to listen to all ip's
+    app.run(host='0.0.0.0', port=5000)
