@@ -60,6 +60,10 @@ Image build:
 * ```docker build stock -t stock:latest```
 * ```docker build payment -t payment:latest```
 
+K8s deployment:
+* ```cd k8s ```
+* ```kubectl apply -f . ```
+
 ***Requirements:*** You need to have minikube (with ingress enabled) and helm installed on your machine.
 
 #### kubernetes cluster (managed k8s cluster in the cloud)
