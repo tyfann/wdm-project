@@ -9,8 +9,7 @@ pool = pool.SimpleConnectionPool(1, 30, db_url)
 
 success_response = Response(response='{"Done":success}', status=200, mimetype="application/json")
 fail_response = Response(response='{"Done":failure}', status=400, mimetype="application/json")
-class Res(object):
-    pass
+
 
 
 def query(db_query, param, connection):
@@ -26,7 +25,7 @@ def initial_connection(db_query, param):
         connection = pool.getconn()
     except Exception as error_message:
         print(error_message)
-        return False
+        return make_response(jsonify(str(error_message) + "Error happens when executing the query"), 500)
 
     cursor = connection.crusor()
 
@@ -38,27 +37,22 @@ def initial_connection(db_query, param):
         connection.rollback()
         pool.putconn(connection)
 
-        res = Res()
-        res.status_code = 500
-        res.json = lambda: error_message_1
-        return res
-
-
+        return make_response(jsonify(str(error_message_1) + "Error happens when executing the query"), 500)
 
     if cursor.description is None:
         results = cursor.fetchall()
     else:
-        results = [to_dict(cursor, row) for row in cursor.fetchall()]
-
+        results = cursor.fetchall()
+        # zip them in the dictionary
+        # results = [to_dict(cursor, row) for row in cursor.fetchall()]
 
     cursor.close()
     connection.commit()
     pool.putconn(connection)
 
-    res = Res()
-    res.status_code = 200
-    res.json = lambda: results
-    return res
+    return make_response(jsonify(results), 200)
+
+
 
 def get_one(db_query, param, connector = None):
     return get_status(db_query, param, connector)
