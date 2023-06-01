@@ -13,7 +13,7 @@ stock_url = "http://stock-service:5000"
 payment_url = "http://payment-service:5000"
 
 
-# TODO: This file does not need to connect to DB directly, just send your SQL query to connectionI, and connectionI will send the
+#  This file does not connect to DB directly, just send your SQL query to connectionI, and connectionI will send the
 #  query to db_connector such that the query is executed in the DB
 @app.before_request
 def before_request():

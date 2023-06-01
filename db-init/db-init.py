@@ -9,7 +9,7 @@ with conn.cursor() as cur:
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE ITEM (item_id INT PRIMARY KEY, item_price NUMERIC, item-stock INT);"
+        "CREATE TABLE ITEMS (item_id INT PRIMARY KEY, item_price NUMERIC, item_stock INT);"
     )
     conn.commit()
     cur.execute(
@@ -17,7 +17,7 @@ with conn.cursor() as cur:
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE Orders (order_id INT PRIMARY KEY, user_id INT, is_paid BOOLEAN, total_price NUMERIC);"
+        "CREATE TABLE Orders (order_id INT PRIMARY KEY, user_id INT, paid BOOLEAN, total_price NUMERIC);"
     )
     conn.commit()
     cur.execute(
@@ -25,7 +25,7 @@ with conn.cursor() as cur:
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE order_detail (order_id INT, item_id INT, item_amount INT, CONSTRAINT PK_order_item PRIMARY KEY (order_id, item_id));"
+        "CREATE TABLE order_details (order_id INT, item_id INT, item_amount INT, CONSTRAINT PK_order_item PRIMARY KEY (order_id, item_id));"
     )
     conn.commit()
     cur.execute(

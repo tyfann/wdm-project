@@ -30,7 +30,7 @@ def create_item(price: int):
     while True:
         item_id = random.randrange(0, 9223372036854775807)  # Cockroachdb max and min INT values (64-bit)
         response = cni.query(
-            "INSERT INTO stock (item_id, unit_price, stock_amount) VALUES (%s,%s, 0) RETURNING item_id",
+            "INSERT INTO ITEMS (item_id, unit_price, stock_amount) VALUES (%s,%s, 0) RETURNING item_id",
             [item_id, price], g.connection)
         if response.status_code == 200:
             result = response.json()
@@ -40,14 +40,14 @@ def create_item(price: int):
 
 @app.get('/find/<item_id>')
 def find_item(item_id: str):
-    return cni.get_one("SELECT stock_amount as stock, unit_price as price FROM stock WHERE item_id=%s",
+    return cni.get_one("SELECT stock_amount as stock, unit_price as price FROM ITEMS WHERE item_id=%s",
                        [item_id], g.connection)
 
 
 @app.post('/add/<item_id>/<amount>')
 def add_stock(item_id: str, amount: int):
     return cni.get_status(
-        "UPDATE stock SET stock_amount = stock_amount + %s WHERE item_id=%s AND stock_amount + %s > stock_amount",
+        "UPDATE ITEMS SET stock_amount = stock_amount + %s WHERE item_id=%s AND stock_amount + %s > stock_amount",
         [amount, item_id, amount], g.connection)
 
 

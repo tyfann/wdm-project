@@ -5,8 +5,8 @@ import os
 import random
 
 app = Flask(__name__)
-
-db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+ip = os.getenv('MY_POD_IP')
+db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 conn_count = 0
 pool = pool.SimpleConnectionPool(1, 100, db_url)
 connections = {}
@@ -17,9 +17,7 @@ def start_transaction():
     global conn_count
     conn = pool.getconn()
     connections[conn_count] = conn
-    response = jsonify(
-        conn_id=conn_count
-    )
+    response = f"{ip}:{conn_count}"
     conn_count += 1
     return make_response(response, 200)
 
@@ -60,7 +58,7 @@ def commit_transaction(conn_id):
     return make_response(response, 200)
 
 
-@app.post('/cancel_tx/<conn_id>')
+@app.post('/cancel/<conn_id>')
 def cancel_transaction(conn_id):
     connection = connections[conn_id]
     connection.rollback()

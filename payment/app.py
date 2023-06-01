@@ -23,7 +23,7 @@ def before_request():
 def create_user():
     while True:
         user_id = random.randrange(0, 9223372036854775807)  # Cockroachdb max and min INT values (64-bit)
-        response = cni.query("INSERT INTO accounts (user_id, credit) VALUES (%s, 0) RETURNING user_id",
+        response = cni.query("INSERT INTO Users (user_id, credit) VALUES (%s, 0) RETURNING user_id",
                             [user_id], g.connection)
         if response.status_code == 200:
             result = response.json()
@@ -33,7 +33,7 @@ def create_user():
 
 @app.get('/find_user/<user_id>')
 def find_user(user_id: int):
-    res, status = cni.get_response("SELECT user_id, credit FROM accounts WHERE user_id=%s",
+    res, status = cni.get_response("SELECT user_id, credit FROM Users WHERE user_id=%s",
                               [user_id], g.connection)
     if status == 200:
         res["credit"] = float(res["credit"])
@@ -42,7 +42,7 @@ def find_user(user_id: int):
 
 @app.post('/add_funds/<user_id>/<amount>')
 def add_credit(user_id: str, amount: int):
-    return cni.get_response("UPDATE accounts SET credit = credit + %s WHERE user_id=%s AND credit + %s >= credit",
+    return cni.get_response("UPDATE Users SET credit = credit + %s WHERE user_id=%s AND credit + %s >= credit",
                             [amount, user_id, amount], g.connection)
 
 
@@ -53,7 +53,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         g.connection = tuple(g.connectionStr.split(':'))
 
     _, status_code = cni.get_response(
-        "UPDATE accounts SET credit = credit - CAST(%s AS NUMERIC) WHERE user_id=%s AND credit - CAST(%s AS NUMERIC) >= 0 AND CAST(%s AS NUMERIC) >= 0",
+        "UPDATE Users SET credit = credit - CAST(%s AS NUMERIC) WHERE user_id=%s AND credit - CAST(%s AS NUMERIC) >= 0 AND CAST(%s AS NUMERIC) >= 0",
         [amount, user_id, amount, amount], g.connection)
     if status_code != 200:
         if not g.already_using_connection_manager:
@@ -80,7 +80,7 @@ def cancel_payment(user_id: str, order_id: str):
         g.connection = tuple(g.connectionStr.split(':'))
 
     _, status_code = cni.get_response(
-        "UPDATE accounts SET credit = credit + CAST((SELECT SUM(unit_price) FROM order_details WHERE order_id=%s) AS INTEGER) WHERE user_id=%s",
+        "UPDATE Users SET credit = credit + CAST((SELECT SUM(unit_price) FROM order_details WHERE order_id=%s) AS INTEGER) WHERE user_id=%s",
         [order_id, user_id], g.connection)
     if status_code != 200:
         if not g.already_using_connection_manager:
