@@ -36,20 +36,20 @@ def create_item(price: int):
 
 @app.get('/find/<item_id>')
 def find_item(item_id: str):
-    return cni.get_one("SELECT item_stock as stock, item_price as price FROM ITEMS WHERE item_id=%s",
+    return cni.get_response("SELECT item_stock as stock, item_price as price FROM ITEMS WHERE item_id=%s",
                        [item_id], g.connection)
 
 
 @app.post('/add/<item_id>/<amount>')
 def add_stock(item_id: str, amount: int):
-    return cni.get_status(
+    return cni.get_response(
         "UPDATE ITEMS SET item_stock = item_stock + %s WHERE item_id=%s AND item_stock + %s > item_stock",
         [amount, item_id, amount], g.connection)
 
 
 @app.post('/subtract/<item_id>/<amount>')
 def remove_stock(item_id: str, amount: int):
-    return cni.get_status(
+    return cni.get_response(
         "UPDATE stock SET stock_amount = stock_amount - %s WHERE item_id=%s AND stock_amount - %s >= 0",
         [amount, item_id, amount], g.connection)
 
