@@ -134,9 +134,13 @@ def remove_item(order_id: str, item_id: str):
 
 @app.get('/find/<order_id>')
 def find_order(order_id: str):
-    return cni.get_response(
+    res, status = cni.get_response(
         "SELECT %s AS order_id, (SELECT paid FROM ORDERS WHERE order_id=%s) AS paid, coalesce(json_object_agg(item_id::string, item_amount), '{}'::json) AS items, (SELECT user_id FROM ORDERS WHERE order_id=%s) AS user_id, (SELECT total_price FROM ORDERS WHERE order_id=%s) AS total_price FROM ORDER_DETAILS WHERE order_id=%s",
         [order_id, order_id, order_id, order_id], g.connection)
+
+    if status == 200:
+        res["total_price"] = float(res["total_price"])
+    return res, status
 
 
 # checkout函数中应当判断用户需要购买的item在stock中是否大于等于当前的购买需求，如果没满足，则需要返回checkout失败的信息
