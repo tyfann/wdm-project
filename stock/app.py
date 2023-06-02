@@ -39,7 +39,7 @@ def find_item(item_id: str):
                        [item_id], g.connection)
 
     if status == 200:
-        res["item_price"] = float(res["item_price"])
+        res["price"] = float(res["price"])
     return res, status
 
 
