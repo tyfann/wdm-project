@@ -35,8 +35,12 @@ def create_item(price: int):
 
 @app.get('/find/<item_id>')
 def find_item(item_id: str):
-    return cni.get_response("SELECT item_stock as stock, item_price as price FROM ITEMS WHERE item_id=%s",
+    res, status = cni.get_response("SELECT item_stock as stock, item_price as price FROM ITEMS WHERE item_id=%s",
                        [item_id], g.connection)
+
+    if status == 200:
+        res["price"] = float(res["price"])
+    return res, status
 
 
 @app.post('/add/<item_id>/<amount>')

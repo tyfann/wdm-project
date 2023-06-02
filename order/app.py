@@ -70,7 +70,7 @@ def add_item(order_id: str, item_id: str):
         g.connection = tuple(g.connectionStr.split(':'))
 
     data, status_code = cni.get_response(
-        "INSERT INTO ORDER_DETAILS (order_id, item_id, count) VALUES (%s,%s,1) ON CONFLICT (order_id, item_id) DO UPDATE SET count = ORDER_DETAILS.count+1",
+        "INSERT INTO ORDER_DETAILS (order_id, item_id, item_amount) VALUES (%s,%s,1) ON CONFLICT (order_id, item_id) DO UPDATE SET item_amount = ORDER_DETAILS.item_amount+1",
         [order_id, item_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
@@ -103,13 +103,13 @@ def remove_item(order_id: str, item_id: str):
         g.connection = tuple(g.connectionStr.split(':'))
 
     data, status_code = cni.get_response(
-        "UPDATE ORDER_DETAILS SET count=count-1 WHERE order_id=%s AND item_id=%s RETURNING count",
+        "UPDATE ORDER_DETAILS SET item_amount=item_amount-1 WHERE order_id=%s AND item_id=%s RETURNING item_amount",
         [order_id, item_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return cni.fail_response
-    if data["count"] == 0:
+    if data["item_amount"] == 0:
         cni.query("DELETE FROM ORDER_DETAILS WHERE order_id=%s AND item_id=%s",
                   [order_id, item_id], g.connection)
 
@@ -134,9 +134,13 @@ def remove_item(order_id: str, item_id: str):
 
 @app.get('/find/<order_id>')
 def find_order(order_id: str):
-    return cni.get_response(
-        "SELECT %s AS order_id, (SELECT paid FROM ORDERS WHERE order_id=%s) AS paid, coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items, (SELECT user_id FROM ORDERS WHERE order_id=%s) AS user_id, (SELECT total_price FROM ORDERS WHERE order_id=%s) AS total_price FROM ORDER_DETAILS WHERE order_id=%s",
+    res, status = cni.get_response(
+        "SELECT %s AS order_id, (SELECT paid FROM ORDERS WHERE order_id=%s) AS paid, coalesce(json_object_agg(item_id::string, item_amount), '{}'::json) AS items, (SELECT user_id FROM ORDERS WHERE order_id=%s) AS user_id, (SELECT total_price FROM ORDERS WHERE order_id=%s) AS total_price FROM ORDER_DETAILS WHERE order_id=%s",
         [order_id, order_id, order_id, order_id], g.connection)
+
+    if status == 200:
+        res["total_price"] = float(res["total_price"])
+    return res, status
 
 
 # checkout函数中应当判断用户需要购买的item在stock中是否大于等于当前的购买需求，如果没满足，则需要返回checkout失败的信息
@@ -163,7 +167,7 @@ def checkout(order_id: str):
         return cni.fail_response
 
     data, status_code = cni.get_response(
-        "SELECT coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items FROM ORDER_DETAILS WHERE order_id=%s",
+        "SELECT coalesce(json_object_agg(item_id::string, item_amount), '{}'::json) AS items FROM ORDER_DETAILS WHERE order_id=%s",
         [order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
@@ -171,8 +175,8 @@ def checkout(order_id: str):
         return cni.fail_response
     items = data["items"]
 
-    for item_id, count in items.items():
-        response = requests.post(f"{stock_url}/subtract/{item_id}/{count}", headers={"cn": g.connectionStr})
+    for item_id, item_amount in items.items():
+        response = requests.post(f"{stock_url}/subtract/{item_id}/{item_amount}", headers={"cn": g.connectionStr})
         if response.status_code != 200:
             if not g.cni_connected:
                 cni.cancel_transaction(g.connection)
