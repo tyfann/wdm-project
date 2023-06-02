@@ -55,7 +55,8 @@ def get_response(db_query, param, connector):
     response = query(db_query, param, connector)
 
     if response.status_code == 200:
-        return response.json()[1], 200
+        if (len(response.json()) == 1):
+            return response.json()[0], 200
     return make_response(jsonify({"Status: Failure"}), 400)
 
 
