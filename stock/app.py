@@ -12,7 +12,7 @@ app = Flask("stock-service")
 
 @app.before_request
 def before_request():
-    g.connectionStr = request.headers.get("connection")
+    g.connectionStr = request.headers.get("cn")
     if g.connectionStr is not None:
         g.cni_connected = True
         g.connection = tuple(g.connectionStr.split(':'))
@@ -31,7 +31,7 @@ def create_item(price: int):
         if response.status_code == 200:
             result = response.get_json()
             if len(result) == 1:
-                return result[0], 200  # Maybe we need to jsonify(result[0]), we have errors here.
+                return result, 200  # Maybe we need to jsonify(result[0]), we have errors here.
 
 
 @app.get('/find/<item_id>')
@@ -56,4 +56,4 @@ def remove_stock(item_id: str, amount: int):
 
 if __name__ == '__main__':
     # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5002, debug=True)

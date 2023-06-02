@@ -6,7 +6,8 @@ import os
 
 app = Flask(__name__)
 ip = os.getenv('MY_POD_IP')
-db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+# db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 conn_count = 0
 pool = pool.SimpleConnectionPool(1, 100, db_url)
 connections = {}
@@ -72,4 +73,4 @@ def cancel_transaction(conn_id):
 
 if __name__ == '__main__':
     # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)

@@ -4,7 +4,8 @@ from flask import Response, make_response, jsonify
 
 URL = "http://connector-service:5000"
 ##DBURL
-db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+# db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
 pool = pool.SimpleConnectionPool(1, 30, db_url)
 
 
@@ -38,9 +39,8 @@ def initial_connection(db_query, param):
     if cursor.description is None:
         results = cursor.fetchall()
     else:
-        results = cursor.fetchall()
         # zip them in the dictionary
-        # results = [to_dict(cursor, row) for row in cursor.fetchall()]
+        results = [to_dict(cursor, row) for row in cursor.fetchall()]
 
     cursor.close()
     connection.commit()

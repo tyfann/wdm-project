@@ -7,19 +7,19 @@ ORDER_URL = STOCK_URL = PAYMENT_URL = "http://localhost"
 #   STOCK MICROSERVICE FUNCTIONS
 ########################################################################################################################
 def create_item(price: float) -> dict:
-    return requests.post(f"{STOCK_URL}/stock/item/create/{price}").json()
+    return requests.post(f"{STOCK_URL}:5002/item/create/{price}").json()
 
 
 def find_item(item_id: str) -> dict:
-    return requests.get(f"{STOCK_URL}/stock/find/{item_id}").json()
+    return requests.get(f"{STOCK_URL}:5002/find/{item_id}").json()
 
 
 def add_stock(item_id: str, amount: int) -> int:
-    return requests.post(f"{STOCK_URL}/stock/add/{item_id}/{amount}").status_code
+    return requests.post(f"{STOCK_URL}:5002/add/{item_id}/{amount}").status_code
 
 
 def subtract_stock(item_id: str, amount: int) -> int:
-    return requests.post(f"{STOCK_URL}/stock/subtract/{item_id}/{amount}").status_code
+    return requests.post(f"{STOCK_URL}:5002/subtract/{item_id}/{amount}").status_code
 
 
 ########################################################################################################################

@@ -17,7 +17,7 @@ payment_url = "http://payment-service:5000"
 #  query to db_connector such that the query is executed in the DB
 @app.before_request
 def before_request():
-    g.connectionStr = request.headers.get("connection")
+    g.connectionStr = request.headers.get("cn")
     if g.connectionStr is not None:
         g.cni_connected = True
         g.connection = tuple(g.connectionStr.split(':'))
@@ -31,7 +31,7 @@ def create_order(user_id: str):
     while True:
         order_id = random.randrange(0, 9223372036854775807)  # Cockroachdb max and min INT values (64-bit)
         response = cni.query(
-            "INSERT INTO orders (order_id, user_id, paid, total_cost) VALUES (%s,%s,FALSE,0) RETURNING order_id",
+            "INSERT INTO ORDERS (order_id, user_id, paid, total_cost) VALUES (%s,%s,FALSE,0) RETURNING order_id",
             [order_id, user_id], g.connection)
         if response.status_code == 200:
             result = response.json()
@@ -45,14 +45,14 @@ def remove_order(order_id: str):
         g.connectionStr = cni.start_transaction()
         g.connection = tuple(g.connectionStr.split(':'))
 
-    # order_details to store the information of one order (order_id,item_id,amount)
-    _, status_code = cni.get_response("DELETE FROM order_details WHERE order_id=%s", [order_id], g.connection)
+    # ORDER_DETAILS to store the information of one order (order_id,item_id,amount)
+    _, status_code = cni.get_response("DELETE FROM ORDER_DETAILS WHERE order_id=%s", [order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return
 
-    _, status_code = cni.get_response("DELETE FROM orders WHERE order_id=%s", [order_id], g.connection)
+    _, status_code = cni.get_response("DELETE FROM ORDERS WHERE order_id=%s", [order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
@@ -70,21 +70,21 @@ def add_item(order_id: str, item_id: str):
         g.connection = tuple(g.connectionStr.split(':'))
 
     data, status_code = cni.get_response(
-        "INSERT INTO order_details (order_id, item_id, count) VALUES (%s,%s,1) ON CONFLICT (order_id, item_id) DO UPDATE SET count = order_details.count+1",
+        "INSERT INTO ORDER_DETAILS (order_id, item_id, count) VALUES (%s,%s,1) ON CONFLICT (order_id, item_id) DO UPDATE SET count = ORDER_DETAILS.count+1",
         [order_id, item_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return cni.fail_response
 
-    response = requests.get(f"{stock_url}/find/{item_id}", headers={"connection": g.connectionStr})
+    response = requests.get(f"{stock_url}/find/{item_id}", headers={"cn": g.connectionStr})
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return cni.fail_response
     price = response.json()["price"]  # todo!确定payment里面的名称
 
-    data, status_code = cni.get_response("UPDATE orders SET total_cost=total_cost+%s WHERE order_id=%s",
+    data, status_code = cni.get_response("UPDATE ORDERS SET total_cost=total_cost+%s WHERE order_id=%s",
                                          [price, order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
@@ -103,24 +103,24 @@ def remove_item(order_id: str, item_id: str):
         g.connection = tuple(g.connectionStr.split(':'))
 
     data, status_code = cni.get_response(
-        "UPDATE order_details SET count=count-1 WHERE order_id=%s AND item_id=%s RETURNING count",
+        "UPDATE ORDER_DETAILS SET count=count-1 WHERE order_id=%s AND item_id=%s RETURNING count",
         [order_id, item_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return cni.fail_response
     if data["count"] == 0:
-        cni.query("DELETE FROM order_details WHERE order_id=%s AND item_id=%s",
+        cni.query("DELETE FROM ORDER_DETAILS WHERE order_id=%s AND item_id=%s",
                   [order_id, item_id], g.connection)
 
-    response = requests.get(f"{stock_url}/find/{item_id}", headers={"connection": g.connectionStr})
+    response = requests.get(f"{stock_url}/find/{item_id}", headers={"cn": g.connectionStr})
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return cni.fail_response
     price = response.json()["price"]
 
-    data, status_code = cni.get_response("UPDATE orders SET total_cost=total_cost-%s WHERE order_id=%s",
+    data, status_code = cni.get_response("UPDATE ORDERS SET total_cost=total_cost-%s WHERE order_id=%s",
                                          [price, order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
@@ -135,7 +135,7 @@ def remove_item(order_id: str, item_id: str):
 @app.get('/find/<order_id>')
 def find_order(order_id: str):
     return cni.get_response(
-        "SELECT %s AS order_id, (SELECT paid FROM orders WHERE order_id=%s) AS paid, coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items, (SELECT user_id FROM orders WHERE order_id=%s) AS user_id, (SELECT total_cost FROM orders WHERE order_id=%s) AS total_cost FROM order_details WHERE order_id=%s",
+        "SELECT %s AS order_id, (SELECT paid FROM ORDERS WHERE order_id=%s) AS paid, coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items, (SELECT user_id FROM ORDERS WHERE order_id=%s) AS user_id, (SELECT total_cost FROM ORDERS WHERE order_id=%s) AS total_cost FROM ORDER_DETAILS WHERE order_id=%s",
         [order_id, order_id, order_id, order_id], g.connection)
 
 
@@ -146,7 +146,7 @@ def checkout(order_id: str):
         g.connectionStr = cni.start_transaction()
         g.connection = tuple(g.connectionStr.split(':'))
 
-    data, status_code = cni.get_response("SELECT user_id, total_cost FROM orders WHERE order_id=%s",
+    data, status_code = cni.get_response("SELECT user_id, total_cost FROM ORDERS WHERE order_id=%s",
                                     [order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
@@ -156,14 +156,14 @@ def checkout(order_id: str):
     total_price = data["total_cost"]
 
     response = requests.post(f"{payment_url}/pay/{user_id}/{order_id}/{total_price}",
-                             headers={"connection": g.connectionStr})
+                             headers={"cn": g.connectionStr})
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return cni.fail_response
 
     data, status_code = cni.get_response(
-        "SELECT coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items FROM order_details WHERE order_id=%s",
+        "SELECT coalesce(json_object_agg(item_id::string, count), '{}'::json) AS items FROM ORDER_DETAILS WHERE order_id=%s",
         [order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
@@ -172,7 +172,7 @@ def checkout(order_id: str):
     items = data["items"]
 
     for item_id, count in items.items():
-        response = requests.post(f"{stock_url}/subtract/{item_id}/{count}", headers={"connection": g.connectionStr})
+        response = requests.post(f"{stock_url}/subtract/{item_id}/{count}", headers={"cn": g.connectionStr})
         if response.status_code != 200:
             if not g.cni_connected:
                 cni.cancel_transaction(g.connection)
