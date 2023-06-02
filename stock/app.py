@@ -50,7 +50,7 @@ def add_stock(item_id: str, amount: int):
 @app.post('/subtract/<item_id>/<amount>')
 def remove_stock(item_id: str, amount: int):
     return cni.get_response(
-        "UPDATE stock SET stock_amount = stock_amount - %s WHERE item_id=%s AND stock_amount - %s >= 0",
+        "UPDATE stock SET item_stock = item_stock - %s WHERE item_id=%s AND item_stock - %s >= 0",
         [amount, item_id, amount], g.connection)
 
 
