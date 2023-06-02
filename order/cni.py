@@ -49,7 +49,7 @@ def initial_connection(db_query, param):
 
 
 def get_response(db_query, param, connector):
-    if db_query[0] != 'S':
+    if db_query.split(' ')[0] != 'SELECT':
         db_query = f"{db_query} RETURNING TRUE AS done;"
     response = query(db_query, param, connector)
 
