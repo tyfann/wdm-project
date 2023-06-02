@@ -2,7 +2,7 @@ import requests
 from psycopg2 import pool
 from flask import Response, make_response, jsonify
 
-URL = "http://connection-manager-service:5000"
+URL = "http://connector-service:5000"
 ##DBURL
 db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 pool = pool.SimpleConnectionPool(1, 30, db_url)
