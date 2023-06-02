@@ -30,8 +30,7 @@ def create_item(price: int):
             [item_id, price], g.connection)
         if response.status_code == 200:
             result = response.get_json()
-            if len(result) == 1:
-                return result[0], 200  # Maybe we need to jsonify(result[0]), we have errors here.
+            return result, 200  # Maybe we need to jsonify(result[0]), we have errors here.
 
 
 @app.get('/find/<item_id>')
