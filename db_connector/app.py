@@ -44,7 +44,7 @@ def execute_transaction(conn_id):
     else:
         results = cursor.fetchall()
     cursor.close()
-    return make_response(jsonify(results), 200)
+    return make_response(results, 200)
 
 
 @app.post('/commit/<conn_id>')
@@ -53,10 +53,7 @@ def commit_transaction(conn_id):
     connection.commit()
     del connections[conn_id]
     pool.putconn(connection)
-    response = jsonify(
-        message="Commit Success"
-    )
-    return make_response(response, 200)
+    return make_response("message:Commit Success", 200)
 
 
 @app.post('/cancel/<conn_id>')
@@ -65,10 +62,8 @@ def cancel_transaction(conn_id):
     connection.rollback()
     del connections[conn_id]
     pool.putconn(connection)
-    response = jsonify(
-        message="Cancel Success"
-    )
-    return make_response(response, 200)
+
+    return make_response("message=Cancel Success", 200)
 
 
 if __name__ == '__main__':
