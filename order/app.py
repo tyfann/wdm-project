@@ -9,8 +9,10 @@ import cni
 
 app = Flask("order-service")
 
-stock_url = "http://stock-service:5000"
-payment_url = "http://payment-service:5000"
+stock_url = "http://localhost:5003"
+payment_url = "http://localhost:5002"
+# stock_url = "http://stock-service:5001"
+# payment_url = "http://payment-service:5001"
 
 
 #  This file does not connect to DB directly, just send your SQL query to connectionI, and connectionI will send the
@@ -34,9 +36,8 @@ def create_order(user_id: str):
             "INSERT INTO ORDERS (order_id, user_id, paid, total_price) VALUES (%s,%s,FALSE,0) RETURNING order_id",
             [order_id, user_id], g.connection)
         if response.status_code == 200:
-            result = response.json()
-            if len(result) == 1:
-                return result[0], 200
+            result = response.get_json()
+            return result, 200
 
 
 @app.delete('/remove/<order_id>')
@@ -56,11 +57,12 @@ def remove_order(order_id: str):
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return cni.success_response
+    return Response(response='{"done": true}',status=200,mimetype="application/json")
+
 
 
 @app.post('/addItem/<order_id>/<item_id>')
@@ -75,25 +77,26 @@ def add_item(order_id: str, item_id: str):
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     response = requests.get(f"{stock_url}/find/{item_id}", headers={"cn": g.connectionStr})
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
-    price = response.json()["price"]  # todo!确定payment里面的名称
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
+    price = response.json()["price"]
 
     data, status_code = cni.get_response("UPDATE ORDERS SET total_price=total_price+%s WHERE order_id=%s",
                                          [price, order_id], g.connection)
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return cni.success_response
+    return Response(response='{"done": true}',status=200,mimetype="application/json")
+
 
 
 @app.delete('/removeItem/<order_id>/<item_id>')
@@ -108,7 +111,7 @@ def remove_item(order_id: str, item_id: str):
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
     if data["item_amount"] == 0:
         cni.query("DELETE FROM ORDER_DETAILS WHERE order_id=%s AND item_id=%s",
                   [order_id, item_id], g.connection)
@@ -117,7 +120,7 @@ def remove_item(order_id: str, item_id: str):
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
     price = response.json()["price"]
 
     data, status_code = cni.get_response("UPDATE ORDERS SET total_price=total_price-%s WHERE order_id=%s",
@@ -125,11 +128,12 @@ def remove_item(order_id: str, item_id: str):
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return cni.success_response
+    return Response(response='{"done": true}',status=200,mimetype="application/json")
+
 
 
 @app.get('/find/<order_id>')
@@ -155,7 +159,7 @@ def checkout(order_id: str):
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
     user_id = data["user_id"]
     total_price = data["total_price"]
 
@@ -164,7 +168,7 @@ def checkout(order_id: str):
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     data, status_code = cni.get_response(
         "SELECT coalesce(json_object_agg(item_id::string, item_amount), '{}'::json) AS items FROM ORDER_DETAILS WHERE order_id=%s",
@@ -172,7 +176,7 @@ def checkout(order_id: str):
     if status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
     items = data["items"]
 
     for item_id, item_amount in items.items():
@@ -180,13 +184,14 @@ def checkout(order_id: str):
         if response.status_code != 200:
             if not g.cni_connected:
                 cni.cancel_transaction(g.connection)
-            return cni.fail_response
+            return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return cni.success_response
+    return Response(response='{"done": true}',status=200,mimetype="application/json")
+
 
 
 if __name__ == '__main__':
     # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5004, debug=True)
