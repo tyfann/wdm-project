@@ -1,4 +1,4 @@
-from flask import Flask, request, g
+from flask import Flask, request, g, Response
 import requests
 import random
 import re
@@ -24,17 +24,16 @@ def create_user():
     while True:
         user_id = random.randrange(0, 9223372036854775807)  # Cockroachdb max and min INT values (64-bit)
         response = cni.query("INSERT INTO USERS (user_id, credit) VALUES (%s, 0) RETURNING user_id",
-                            [user_id], g.connection)
+                             [user_id], g.connection)
         if response.status_code == 200:
-            result = response.json()
-            if len(result) == 1:
-                return result[0], 200
+            result = response.get_json()
+            return result, 200
 
 
 @app.get('/find_user/<user_id>')
 def find_user(user_id: int):
     res, status = cni.get_response("SELECT user_id, credit FROM USERS WHERE user_id=%s",
-                              [user_id], g.connection)
+                                   [user_id], g.connection)
     if status == 200:
         res["credit"] = float(res["credit"])
     return res, status
@@ -58,7 +57,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
     if status_code != 200:
         if not g.already_using_connection_manager:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     _, status_code = cni.get_response(
         "UPDATE ORDERS SET paid = TRUE WHERE order_id=%s AND user_id=%s AND paid = FALSE",
@@ -66,11 +65,11 @@ def remove_credit(user_id: str, order_id: str, amount: int):
     if status_code != 200:
         if not g.already_using_connection_manager:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return cni.success_response
+    return Response(response='{"done": true}', status=200, mimetype="application/json")
 
 
 @app.post('/cancel/<user_id>/<order_id>')
@@ -85,26 +84,26 @@ def cancel_payment(user_id: str, order_id: str):
     if status_code != 200:
         if not g.already_using_connection_manager:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     _, status_code = cni.get_response("UPDATE ORDERS SET paid = FALSE WHERE order_id=%s",
                                       [order_id], g.connection)
     if status_code != 200:
         if not g.already_using_connection_manager:
             cni.cancel_transaction(g.connection)
-        return cni.fail_response
+        return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     if not g.already_using_connection_manager:
         cni.commit_transaction(g.connection)
-    return cni.success_response
+    return Response(response='{"done": true}', status=200, mimetype="application/json")
 
 
 # Changed to GET based on project document
 @app.get('/status/<user_id>/<order_id>')
 def payment_status(user_id: str, order_id: str):
     return cni.get_response("SELECT paid FROM ORDERS WHERE order_id=%s",
-                       [order_id], g.connection)
+                            [order_id], g.connection)
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)
