@@ -59,4 +59,6 @@ def remove_stock(item_id: str, amount: int):
 
 if __name__ == '__main__':
     # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5003, debug=False)
+    app.run(host='0.0.0.0', port=5001,debug=True)
+    #app.run(host='0.0.0.0', port=5002, debug=False)
+    #app.run(host='0.0.0.0', port=5003, debug=False)

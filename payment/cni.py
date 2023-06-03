@@ -2,17 +2,17 @@ import requests
 from psycopg2 import pool
 from flask import Response, make_response
 
-URL = "http://connector-service:5000"
+URL = "http://localhost:5000"
 ##DBURL
 # db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
-db_url = "postgresql://gefei:3cIYGvT8oIxEyna4cXLGBg@hill-chimera-8089.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
 pool = pool.SimpleConnectionPool(1, 30, db_url)
 
 
 def query(db_query, param, connection):
     if (connection):
         address, id = connection
-        return requests.post(f"http://{address}:5000/exec/{id}", json={"db": db_query, "param": param})
+        return requests.post(f"http://localhost:5000/exec/{id}", json={"db": db_query, "param": param})
     else:
         return initial_connection(db_query, param)
 
@@ -72,14 +72,14 @@ def start_transaction():
 
 
 def cancel_transaction(connector):
-    address, connector_id = connector
+    address, port, connector_id = connector
     while requests.post(f"http://{address}:5000/cancel/{connector_id}").status_code != 200:
         pass
     return
 
 
 def commit_transaction(connector):
-    address, connector_id = connector
+    address, port, connector_id = connector
     while requests.post(f"http://{address}:5000/commit/{connector_id}").status_code != 200:
         pass
     return

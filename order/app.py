@@ -1,6 +1,6 @@
 import ast
 
-from flask import Flask, jsonify, Response, g, request
+from flask import Flask, jsonify, Response, g, request, make_response
 
 import requests
 import random
@@ -9,7 +9,7 @@ import cni
 
 app = Flask("order-service")
 
-stock_url = "http://localhost:5003"
+stock_url = "http://localhost:5001"
 payment_url = "http://localhost:5002"
 # stock_url = "http://stock-service:5001"
 # payment_url = "http://payment-service:5001"
@@ -95,7 +95,7 @@ def add_item(order_id: str, item_id: str):
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return Response(response='{"done": true}',status=200,mimetype="application/json")
+    return make_response("Done:True",200)
 
 
 
@@ -194,4 +194,4 @@ def checkout(order_id: str):
 
 if __name__ == '__main__':
     # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5004, debug=True)
+    app.run(host='0.0.0.0', port=5003, debug=True)
