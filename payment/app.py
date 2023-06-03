@@ -52,7 +52,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         g.connection = tuple(g.connectionStr.split(':'))
 
     _, status_code = cni.get_response(
-        "UPDATE USERS SET credit = credit - CAST(%s AS NUMERIC) WHERE user_id=%s AND credit - CAST(%s AS NUMERIC) >= 0 AND CAST(%s AS NUMERIC) >= 0",
+        "UPDATE USERS SET credit = credit - %s WHERE user_id=%s AND credit - %s >= 0 AND %s >= 0",
         [amount, user_id, amount, amount], g.connection)
     if status_code != 200:
         if not g.already_using_connection_manager:

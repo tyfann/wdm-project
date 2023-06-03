@@ -79,7 +79,7 @@ def add_item(order_id: str, item_id: str):
             cni.cancel_transaction(g.connection)
         return Response(response='{"done": false}', status=400, mimetype="application/json")
 
-    response = requests.get(f"{stock_url}/find/{item_id}", headers={"cn": g.connectionStr})
+    response = requests.get(f"{stock_url}/find/{item_id}")
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)
@@ -161,7 +161,7 @@ def checkout(order_id: str):
             cni.cancel_transaction(g.connection)
         return Response(response='{"done": false}', status=400, mimetype="application/json")
     user_id = data["user_id"]
-    total_price = data["total_price"]
+    total_price = int(float(data["total_price"]))
 
     response = requests.post(f"{payment_url}/pay/{user_id}/{order_id}/{total_price}",
                              headers={"cn": g.connectionStr})
@@ -180,7 +180,7 @@ def checkout(order_id: str):
     items = data["items"]
 
     for item_id, item_amount in items.items():
-        response = requests.post(f"{stock_url}/subtract/{item_id}/{item_amount}", headers={"cn": g.connectionStr})
+        response = requests.post(f"{stock_url}/subtract/{item_id}/{int(item_amount)}")
         if response.status_code != 200:
             if not g.cni_connected:
                 cni.cancel_transaction(g.connection)

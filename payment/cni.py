@@ -11,7 +11,7 @@ pool = pool.SimpleConnectionPool(1, 30, db_url)
 
 def query(db_query, param, connection):
     if (connection):
-        address, id = connection
+        address, port, id= connection
         return requests.post(f"http://localhost:5000/exec/{id}", json={"db": db_query, "param": param})
     else:
         return initial_connection(db_query, param)
