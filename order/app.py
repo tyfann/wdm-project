@@ -1,4 +1,3 @@
-import ast
 
 from flask import Flask, jsonify, Response, g, request, make_response
 

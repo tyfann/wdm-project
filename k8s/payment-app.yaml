@@ -46,4 +46,4 @@ spec:
             - name: STOCK_SERVICE_URL
               value: "stock-service"
             - name: DATABASE_MANAGER_URL
-              value: "connection-manager"
+              value: "connector-service"

@@ -44,6 +44,6 @@ spec:
             - name: ORDER_SERVICE_URL
               value: "order-service"
             - name: DATABASE_MANAGER_URL
-              value: "connection-manager"
+              value: "connector-service"
             - name: PAYMENT_SERVICE_URL
               value: "payment-service"
