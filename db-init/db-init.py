@@ -1,39 +1,39 @@
 import psycopg2
 
-db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
 conn = psycopg2.connect(db_url)
 
 with conn.cursor() as cur:
     cur.execute(
-        "DROP TABLE IF EXISTS ITEM;"
+        "DROP TABLE IF EXISTS ITEMS;"
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE ITEM (item_id INT PRIMARY KEY, item_price NUMERIC, item-stock INT);"
+        "CREATE TABLE ITEMS (item_id INT PRIMARY KEY, item_price NUMERIC, item_stock INT);"
     )
     conn.commit()
     cur.execute(
-        "DROP TABLE IF EXISTS Orders;"
+        "DROP TABLE IF EXISTS ORDERS;"
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE Orders (order_id INT PRIMARY KEY, user_id INT, is_paid BOOLEAN, total_price NUMERIC);"
+        "CREATE TABLE ORDERS (order_id INT PRIMARY KEY, user_id INT, paid BOOLEAN, total_price NUMERIC);"
     )
     conn.commit()
     cur.execute(
-        "DROP TABLE IF EXISTS order_detail;"
+        "DROP TABLE IF EXISTS ORDER_DETAILS;"
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE order_detail (order_id INT, item_id INT, item_amount INT, CONSTRAINT PK_order_item PRIMARY KEY (order_id, item_id));"
+        "CREATE TABLE ORDER_DETAILS (order_id INT, item_id INT, item_amount INT, CONSTRAINT PK_order_item PRIMARY KEY (order_id, item_id));"
     )
     conn.commit()
     cur.execute(
-        "DROP TABLE IF EXISTS users;"
+        "DROP TABLE IF EXISTS USERS;"
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE users (user_id INT PRIMARY KEY, credit NUMERIC);"
+        "CREATE TABLE USERS (user_id INT PRIMARY KEY, credit NUMERIC);"
     )
     conn.commit()
 

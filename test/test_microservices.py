@@ -144,46 +144,6 @@ class TestMicroservices(unittest.TestCase):
         self.assertEqual(credit, 5)
 
 
-    # def test_pay(self):
-    #     user: dict = tu.create_user()
-    #     self.assertTrue('user_id' in user)
-    #     user_id: str = user['user_id']
-    #
-    #     order: dict = tu.create_order(user_id)
-    #     self.assertTrue('order_id' in order)
-    #
-    #     order_id: str = order['order_id']
-    #
-    #     item1: dict = tu.create_item(5)
-    #     self.assertTrue('item_id' in item1)
-    #     item_id1: str = item1['item_id']
-    #     add_stock_response = tu.add_stock(item_id1, 15)
-    #     self.assertTrue(tu.status_code_is_success(add_stock_response))
-    #
-    #     # add item to the stock service
-    #     item2: dict = tu.create_item(5)
-    #     self.assertTrue('item_id' in item2)
-    #     item_id2: str = item2['item_id']
-    #     add_stock_response = tu.add_stock(item_id2, 1)
-    #     self.assertTrue(tu.status_code_is_success(add_stock_response))
-    #
-    #     add_item_response = tu.add_item_to_order(order_id, item_id1)
-    #     self.assertTrue(tu.status_code_is_success(add_item_response))
-    #     add_item_response = tu.add_item_to_order(order_id, item_id2)
-    #     self.assertTrue(tu.status_code_is_success(add_item_response))
-    #
-    #     add_credit_response = tu.add_credit_to_user(user_id, 15)
-    #     self.assertTrue(tu.status_code_is_success(int(add_credit_response)))
-    #
-    #     credit: int = tu.find_user(user_id)['credit']
-    #     self.assertEqual(credit, 15)
-    #
-    #     checkout_response = tu.checkout_order(order_id).status_code
-    #     self.assertTrue(tu.status_code_is_success(checkout_response))
-    #
-    #     credit: int = tu.find_user(user_id)['credit']
-    #     self.assertEqual(credit, 5)
-
 
 if __name__ == '__main__':
 

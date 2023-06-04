@@ -1,57 +1,64 @@
-import os
-import atexit
+import random
+from flask import Flask, jsonify, request, g
 
-from flask import Flask, jsonify
-import redis
-
+import cni
 
 app = Flask("stock-service")
+
 
 # TODO: This file does not need to connect to DB directly, just send your SQL query to CMI, and CMI will send the
 #  query to db_connector such that the query is executed in the DB
 
 
+@app.before_request
+def before_request():
+    g.connectionStr = request.headers.get("cn")
+    if g.connectionStr is not None:
+        g.cni_connected = True
+        g.connection = tuple(g.connectionStr.split(':'))
+    else:
+        g.cni_connected = False
+        g.connection = None
+
+
 @app.post('/item/create/<price>')
 def create_item(price: int):
-    item_id = db.incr('item_id')
-    item = {'item_id': item_id, 'price': price, 'stock': 0}
-    db.hset(f'item:{item_id}', mapping=item)
-    return item, 200
+    while True:
+        item_id = random.randrange(0, 9223372036854775807)  # Cockroachdb max and min INT values (64-bit)
+        response = cni.query(
+            "INSERT INTO ITEMS (item_id, item_price, item_stock) VALUES (%s,%s, 0) RETURNING item_id",
+            [item_id, price], g.connection)
+        if response.status_code == 200:
+            result = response.get_json()
+            return result, 200  # Maybe we need to jsonify(result[0]), we have errors here.
 
 
 @app.get('/find/<item_id>')
 def find_item(item_id: str):
-    item = db.hmget(f'item:{item_id}', ['price', 'stock'])
-    if None in item:
-        return None, 400
-    else:
-        item_json = {'item_id': item_id, 'price': int(item[0]), 'stock': int(item[1])}
-        return item_json, 201
+    res, status = cni.get_response("SELECT item_stock as stock, item_price as price FROM ITEMS WHERE item_id=%s",
+                       [item_id], g.connection)
+
+    if status == 200:
+        res["price"] = float(res["price"])
+    return res, status
 
 
 @app.post('/add/<item_id>/<amount>')
 def add_stock(item_id: str, amount: int):
-    item_str = f'item:{item_id}'
-    if None in db.hmget(item_str, ['price', 'stock']):
-        return "Fail", 401
-    else:
-        db.hincrby(item_str, key='stock', amount=amount)
-        return "Success", 202
-
-
-
+    return cni.get_response(
+        "UPDATE ITEMS SET item_stock = item_stock + %s WHERE item_id=%s AND item_stock + %s > item_stock",
+        [amount, item_id, amount], g.connection)
 
 
 @app.post('/subtract/<item_id>/<amount>')
 def remove_stock(item_id: str, amount: int):
-    item_str = f'item:{item_id}'
-    item = db.hmget(item_str, ['price', 'stock'])
-    if None in item:
-        return "Fail", 401
+    return cni.get_response(
+        "UPDATE ITEMS SET item_stock = item_stock - %s WHERE item_id=%s AND item_stock - %s >= 0",
+        [amount, item_id, amount], g.connection)
 
-    current_amount = item[1]
-    if int(current_amount) < int(amount):
-        return "Stock Not Enough!", 402
-    else:
-        db.hincrby(item_str, key='stock', amount=-int(amount))
-        return "Success", 203
+
+if __name__ == '__main__':
+    # host 0.0.0.0 to listen to all ip's
+    app.run(host='0.0.0.0', port=5001,debug=True)
+    #app.run(host='0.0.0.0', port=5002, debug=False)
+    #app.run(host='0.0.0.0', port=5003, debug=False)

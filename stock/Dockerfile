@@ -6,6 +6,7 @@ COPY ./requirements.txt .
 
 RUN pip install -r requirements.txt
 
-COPY . .
+COPY ./app.py .
+COPY ./cni.py .
 
 EXPOSE 5000
