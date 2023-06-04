@@ -74,6 +74,3 @@ def cancel_transaction(conn_id):
 def to_dict(cursor, row):
     return {col[0]: value for col, value in zip(cursor.description, row)}
 
-if __name__ == '__main__':
-    # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5000,debug=True)

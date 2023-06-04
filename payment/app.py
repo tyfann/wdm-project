@@ -103,7 +103,3 @@ def cancel_payment(user_id: str, order_id: str):
 def payment_status(user_id: str, order_id: str):
     return cni.get_response("SELECT paid FROM ORDERS WHERE order_id=%s",
                             [order_id], g.connection)
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5002, debug=True)

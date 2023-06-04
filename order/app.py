@@ -191,6 +191,3 @@ def checkout(order_id: str):
 
 
 
-if __name__ == '__main__':
-    # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5003, debug=True)
