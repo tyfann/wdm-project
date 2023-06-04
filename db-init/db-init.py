@@ -1,6 +1,6 @@
 import psycopg2
 
-db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 conn = psycopg2.connect(db_url)
 
 with conn.cursor() as cur:

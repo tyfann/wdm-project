@@ -37,7 +37,7 @@ def create_item(price: int):
 def find_item(item_id: str):
     res, status = cni.get_response("SELECT item_stock as stock, item_price as price FROM ITEMS WHERE item_id=%s",
                        [item_id], g.connection)
-
+    # TODO: The result from normal find_item and find_item in order/add_item is not identical.
     if status == 200:
         res["price"] = float(res["price"])
     return res, status

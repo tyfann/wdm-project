@@ -9,8 +9,8 @@ import cni
 
 app = Flask("order-service")
 
-stock_url = "http://localhost:5001"
-payment_url = "http://localhost:5002"
+stock_url = "http://stock-service:5000"
+payment_url = "http://payment-service:5000"
 # stock_url = "http://stock-service:5001"
 # payment_url = "http://payment-service:5001"
 
@@ -95,7 +95,7 @@ def add_item(order_id: str, item_id: str):
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return make_response("Done:True",200)
+    return make_response("Done:True", 200)
 
 
 
@@ -116,7 +116,7 @@ def remove_item(order_id: str, item_id: str):
         cni.query("DELETE FROM ORDER_DETAILS WHERE order_id=%s AND item_id=%s",
                   [order_id, item_id], g.connection)
 
-    response = requests.get(f"{stock_url}/find/{item_id}", headers={"cn": g.connectionStr})
+    response = requests.get(f"{stock_url}/find/{item_id}", headers={"cn": None})
     if response.status_code != 200:
         if not g.cni_connected:
             cni.cancel_transaction(g.connection)

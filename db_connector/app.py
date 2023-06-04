@@ -6,8 +6,8 @@ import os
 
 app = Flask(__name__)
 #ip = os.getenv('MY_POD_IP')
-ip = "localhost:5000"
-db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+ip = os.getenv('MY_POD_IP')
+db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 # db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 conn_count = 0
 pool = pool.SimpleConnectionPool(1, 100, db_url)
