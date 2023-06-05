@@ -138,7 +138,7 @@ def remove_item(order_id: str, item_id: str):
 def find_order(order_id: str):
     res, status = cni.get_response(
         "SELECT %s AS order_id, (SELECT paid FROM ORDERS WHERE order_id=%s) AS paid, coalesce(json_object_agg(item_id::string, item_amount), '{}'::json) AS items, (SELECT user_id FROM ORDERS WHERE order_id=%s) AS user_id, (SELECT total_cost FROM ORDERS WHERE order_id=%s) AS total_cost FROM ORDER_DETAILS WHERE order_id=%s",
-        [order_id, order_id, order_id, order_id], g.connection)
+        [order_id, order_id, order_id, order_id, order_id], g.connection)
 
     if status == 200:
         res["total_cost"] = float(res["total_cost"])

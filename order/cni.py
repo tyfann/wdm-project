@@ -81,11 +81,17 @@ def get_response(db_query, param, connector):
 
     if response.status_code == 200:
         result = response.json()
-        if len(result) == 1:
-            if db_query.split(' ')[0] != 'SELECT':
-                return result, 200
-            else:
+        # 判断result是否为list类型
+        if isinstance(result, list):
+            if len(result) == 0:
+                return "Fail", 400
+            elif len(result) == 1:
                 return result[0], 200
+        else:
+            if len(result) == 0:
+                return "Fail", 400
+            else:
+                return result, 200
     return "Fail", 400
 
 
