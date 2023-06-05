@@ -1,6 +1,7 @@
 import psycopg2
 
-db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+# db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
 conn = psycopg2.connect(db_url)
 
 with conn.cursor() as cur:
@@ -17,7 +18,7 @@ with conn.cursor() as cur:
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE ORDERS (order_id INT PRIMARY KEY, user_id INT, paid BOOLEAN, total_price NUMERIC);"
+        "CREATE TABLE ORDERS (order_id INT PRIMARY KEY, user_id INT, paid BOOLEAN, total_cost NUMERIC);"
     )
     conn.commit()
     cur.execute(
@@ -25,7 +26,7 @@ with conn.cursor() as cur:
     )
     conn.commit()
     cur.execute(
-        "CREATE TABLE ORDER_DETAILS (order_id INT, item_id INT, item_amount INT, CONSTRAINT PK_order_item PRIMARY KEY (order_id, item_id));"
+        "CREATE TABLE ORDER_DETAILS (order_id INT, item_id INT, item_amount INT, CONSTRAINT \"primary\" PRIMARY KEY (order_id, item_id));"
     )
     conn.commit()
     cur.execute(

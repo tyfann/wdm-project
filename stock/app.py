@@ -29,8 +29,9 @@ def create_item(price: int):
             "INSERT INTO ITEMS (item_id, item_price, item_stock) VALUES (%s,%s, 0) RETURNING item_id",
             [item_id, price], g.connection)
         if response.status_code == 200:
-            result = response.get_json()
-            return result, 200  # Maybe we need to jsonify(result[0]), we have errors here.
+            result = response.json()
+            if len(result) == 1:
+                return result[0], 200
 
 
 @app.get('/find/<item_id>')
@@ -56,3 +57,6 @@ def remove_stock(item_id: str, amount: int):
         "UPDATE ITEMS SET item_stock = item_stock - %s WHERE item_id=%s AND item_stock - %s >= 0",
         [amount, item_id, amount], g.connection)
 
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001)
