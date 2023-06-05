@@ -1,19 +1,33 @@
 import requests
 from psycopg2 import pool
-from flask import Response, make_response
+from flask import Response
 
-URL = "http://localhost:5000"
+URL = "http://connector-service:5000"
 ##DBURL
 # db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 # db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
-db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+
 pool = pool.SimpleConnectionPool(1, 30, db_url)
+
+DONE_FALSE = Response(
+    response='{"done": false}',
+    status=400,
+    mimetype="application/json")
+DONE_TRUE = Response(
+    response='{"done": true}',
+    status=200,
+    mimetype="application/json")
+
+
+class ReturnType(object):
+    pass
 
 
 def query(db_query, param, connection):
     if (connection):
-        address, port, id = connection
-        return requests.post(f"http://localhost:5000/exec/{id}", json={"db": db_query, "param": param})
+        address, id = connection
+        return requests.post(f"http://{address}:5000/exec/{id}", json={"db": db_query, "param": param})
     else:
         return initial_connection(db_query, param)
 
@@ -23,7 +37,10 @@ def initial_connection(db_query, param):
         connection = pool.getconn()
     except Exception as error_message:
         print(error_message)
-        return make_response(str(error_message) + "Error happens when executing the query", 400)
+        res = ReturnType()
+        res.status_code = 400
+        res.json = lambda: error_message
+        return res
 
     cursor = connection.cursor()
 
@@ -35,7 +52,11 @@ def initial_connection(db_query, param):
         connection.rollback()
         pool.putconn(connection)
 
-        return make_response(str(error_message_1) + "Error happens when executing the query", 400)
+        res = ReturnType()
+        res.status_code = 500
+        error = error_message_1
+        res.json = lambda: error
+        return res
 
     if cursor.description is None:
         results = cursor.fetchall()
@@ -49,10 +70,11 @@ def initial_connection(db_query, param):
     connection.commit()
     pool.putconn(connection)
 
-    if len(results) == 1:
-        return make_response(results[0], 200)
+    res = ReturnType()
+    res.status_code = 200
+    res.json = lambda: results
 
-    return make_response('Status: Failure', 400)
+    return res
 
 
 def get_response(db_query, param, connector):
@@ -61,8 +83,21 @@ def get_response(db_query, param, connector):
     response = query(db_query, param, connector)
 
     if response.status_code == 200:
-        return response.json(), 200
-    return make_response("Status: Failure", 400)
+
+        result = response.json()
+        # 判断result是否为list类型
+        if isinstance(result, list):
+            if len(result) == 0:
+                return "Fail", 400
+            elif len(result) == 1:
+                return result[0], 200
+        else:
+            if len(result) == 0:
+                return "Fail", 400
+            else:
+                return result, 200
+    return "Fail", 400
+
 
 
 def start_transaction():
@@ -73,14 +108,14 @@ def start_transaction():
 
 
 def cancel_transaction(connector):
-    address, port, connector_id = connector
+    address, connector_id = connector
     while requests.post(f"http://{address}:5000/cancel/{connector_id}").status_code != 200:
         pass
     return
 
 
 def commit_transaction(connector):
-    address, port, connector_id = connector
+    address, connector_id = connector
     while requests.post(f"http://{address}:5000/commit/{connector_id}").status_code != 200:
         pass
     return

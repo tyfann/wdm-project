@@ -1,13 +1,16 @@
 
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify
 from psycopg2 import pool
 import os
 
 
 app = Flask(__name__)
 #ip = os.getenv('MY_POD_IP')
-ip = "localhost:5000"
-db_url = "postgresql://zihan:Cm-3Fp3nrhcdHtjXM2QcJg@wdm-project-7939.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+ip = os.getenv('MY_POD_IP')
+
+db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+#db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+
 # db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
 conn_count = 0
 pool = pool.SimpleConnectionPool(1, 100, db_url)
@@ -21,7 +24,7 @@ def start_transaction():
     connections[conn_count] = conn
     response = f"{ip}:{conn_count}"
     conn_count += 1
-    return make_response(response, 200)
+    return response, 200
 
 
 # This function should receive the SQL sent from CMI and execute it
@@ -38,18 +41,16 @@ def execute_transaction(conn_id):
     try:
         cursor.execute(query,params)
     except Exception as error_message:
-        return make_response("status:error executing SQL query", 500)
+        return "Fail", 400
     # If the SQL query is not reading data from DB, the description is NONE
     if cursor.description is None:
-        # TODO: If we need the column name, we should wrap them into a dictionary
-        result_dict = {}
         results = cursor.fetchall()
     else:
         results = [to_dict(cursor, row) for row in cursor.fetchall()]
     cursor.close()
     if len(results) == 1:
-        return make_response(results[0], 200)
-    return make_response('Status: Failure', 400)
+        return results[0], 200
+    return "Fail", 400
 
 
 @app.post('/commit/<conn_id>')
@@ -59,7 +60,7 @@ def commit_transaction(conn_id):
     del connections[int(conn_id)]
     pool.putconn(connection)
 
-    return make_response("message:Commit Success", 200)
+    return "Success", 200
 
 
 @app.post('/cancel/<conn_id>')
@@ -69,11 +70,11 @@ def cancel_transaction(conn_id):
     del connections[int(conn_id)]
     pool.putconn(connection)
 
-    return make_response("message=Cancel Success", 200)
+    return "Success", 200
 
 def to_dict(cursor, row):
     return {col[0]: value for col, value in zip(cursor.description, row)}
 
+
 if __name__ == '__main__':
-    # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5000,debug=True)
+    app.run(host='0.0.0.0', port=5000)

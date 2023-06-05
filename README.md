@@ -53,6 +53,12 @@ First deploy your database using helm by running the `deploy-charts-minicube.sh`
 but you can find any database you want in https://artifacthub.io/ and adapt the script). Then adapt the k8s configuration files in the
 `\k8s` folder to mach your system and then run `kubectl apply -f .` in the k8s folder. 
 
+***Start Up***
+* ```minikube start --extra-config=kubelet.housekeeping-interval=10s```
+* ```minikube addons enable metrics-server```
+* ```minikube addons enable ingress```
+* ```minikube docker-env``` (Copy paste final line of output) 
+
 Image build:
 * ```docker build db-init -t db-init:latest ```
 * ```docker build db_connector -t connector:latest```
@@ -60,9 +66,9 @@ Image build:
 * ```docker build stock -t stock:latest```
 * ```docker build payment -t payment:latest```
 
-K8s deployment:
-* ```cd k8s ```
-* ```kubectl apply -f . ```
+#### Create the cluster
+```cd ./k8s/```
+```./create_cluster.sh```
 
 ***Requirements:*** You need to have minikube (with ingress enabled) and helm installed on your machine.
 

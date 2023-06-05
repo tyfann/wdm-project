@@ -29,15 +29,16 @@ def create_item(price: int):
             "INSERT INTO ITEMS (item_id, item_price, item_stock) VALUES (%s,%s, 0) RETURNING item_id",
             [item_id, price], g.connection)
         if response.status_code == 200:
-            result = response.get_json()
-            return result, 200  # Maybe we need to jsonify(result[0]), we have errors here.
+            result = response.json()
+            if len(result) == 1:
+                return result[0], 200
 
 
 @app.get('/find/<item_id>')
 def find_item(item_id: str):
     res, status = cni.get_response("SELECT item_stock as stock, item_price as price FROM ITEMS WHERE item_id=%s",
-                       [item_id], g.connection)
-
+                       [item_id], None)
+    # TODO: The result from normal find_item and find_item in order/add_item is not identical.
     if status == 200:
         res["price"] = float(res["price"])
     return res, status
@@ -58,7 +59,4 @@ def remove_stock(item_id: str, amount: int):
 
 
 if __name__ == '__main__':
-    # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0', port=5001,debug=True)
-    #app.run(host='0.0.0.0', port=5002, debug=False)
-    #app.run(host='0.0.0.0', port=5003, debug=False)
+    app.run(host='0.0.0.0', port=5001)
