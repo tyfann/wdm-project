@@ -37,7 +37,10 @@ def initial_connection(db_query, param):
         connection = pool.getconn()
     except Exception as error_message:
         print(error_message)
-        return False
+        res = ReturnType()
+        res.status_code = 400
+        res.json = lambda: error_message
+        return res
 
     cursor = connection.cursor()
 
@@ -50,7 +53,7 @@ def initial_connection(db_query, param):
         pool.putconn(connection)
 
         res = ReturnType()
-        res.status_code = 400
+        res.status_code = 500
         error = error_message_1
         res.json = lambda: error
         return res
