@@ -1,6 +1,6 @@
 import requests
 from psycopg2 import pool
-from flask import Response, make_response
+
 
 URL = "http://localhost:5000"
 ##DBURL
@@ -22,7 +22,7 @@ def initial_connection(db_query, param):
         connection = pool.getconn()
     except Exception as error_message:
         print(error_message)
-        return make_response(str(error_message) + "Error happens when executing the query", 400)
+        return str(error_message) + "Error happens when executing the query", 400
 
     cursor = connection.cursor()
 
@@ -34,7 +34,7 @@ def initial_connection(db_query, param):
         connection.rollback()
         pool.putconn(connection)
 
-        return make_response(str(error_message_1) + "Error happens when executing the query", 400)
+        return str(error_message_1) + "Error happens when executing the query", 400
 
     if cursor.description is None:
         results = cursor.fetchall()
@@ -49,9 +49,9 @@ def initial_connection(db_query, param):
     pool.putconn(connection)
 
     if len(results) == 1:
-        return make_response(results[0], 200)
+        return results[0], 200
 
-    return make_response('Status: Failure', 400)
+    return 'Status: Failure', 400
 
 
 def get_response(db_query, param, connector):
@@ -61,7 +61,7 @@ def get_response(db_query, param, connector):
 
     if response.status_code == 200:
         return response.json, 200
-    return make_response("Status: Failure", 400)
+    return "Status: Failure", 400
 
 
 def start_transaction():

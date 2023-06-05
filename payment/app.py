@@ -53,9 +53,9 @@ def remove_credit(user_id: str, order_id: str, amount: int):
 
     _, status_code = cni.get_response(
         "UPDATE USERS SET credit = credit - %s WHERE user_id=%s AND credit - %s >= 0 AND %s >= 0",
-        [amount, user_id, amount, amount], g.connection)
+        [float(amount), user_id, float(amount), float(amount)], g.connection)
     if status_code != 200:
-        if not g.already_using_connection_manager:
+        if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return Response(response='{"done": false}', status=400, mimetype="application/json")
 
@@ -63,7 +63,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
         "UPDATE ORDERS SET paid = TRUE WHERE order_id=%s AND user_id=%s AND paid = FALSE",
         [order_id, user_id], g.connection)
     if status_code != 200:
-        if not g.already_using_connection_manager:
+        if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return Response(response='{"done": false}', status=400, mimetype="application/json")
 
@@ -82,18 +82,18 @@ def cancel_payment(user_id: str, order_id: str):
         "UPDATE USERS SET credit = credit + CAST((SELECT SUM(unit_price) FROM ORDER_DETAILS WHERE order_id=%s) AS INTEGER) WHERE user_id=%s",
         [order_id, user_id], g.connection)
     if status_code != 200:
-        if not g.already_using_connection_manager:
+        if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return Response(response='{"done": false}', status=400, mimetype="application/json")
 
     _, status_code = cni.get_response("UPDATE ORDERS SET paid = FALSE WHERE order_id=%s",
                                       [order_id], g.connection)
     if status_code != 200:
-        if not g.already_using_connection_manager:
+        if not g.cni_connected:
             cni.cancel_transaction(g.connection)
         return Response(response='{"done": false}', status=400, mimetype="application/json")
 
-    if not g.already_using_connection_manager:
+    if not g.cni_connected:
         cni.commit_transaction(g.connection)
     return Response(response='{"done": true}', status=200, mimetype="application/json")
 
