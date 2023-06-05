@@ -37,6 +37,7 @@ def create_order(user_id: str):
         if response.status_code == 200:
             result = response.get_json()
             return result, 200
+        return "Creation failed", 400
 
 
 @app.delete('/remove/<order_id>')
