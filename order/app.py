@@ -62,7 +62,7 @@ def remove_order(order_id: str):
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return "Success", 200
+    return cni.DONE_TRUE
 
 
 @app.post('/addItem/<order_id>/<item_id>')
@@ -95,7 +95,7 @@ def add_item(order_id: str, item_id: str):
 
     if not g.cni_connected:
         cni.commit_transaction(g.connection)
-    return "Success", 200
+    return cni.DONE_TRUE
 
 
 @app.delete('/removeItem/<order_id>/<item_id>')
@@ -104,7 +104,7 @@ def remove_item(order_id: str, item_id: str):
         g.connectionStr = cni.start_transaction()
         g.connection = tuple(g.connectionStr.split(':'))
 
-    data, status_code = cni.get_response(
+    data, status_code = cni.query(
         "UPDATE ORDER_DETAILS SET item_amount=item_amount-1 WHERE order_id=%s AND item_id=%s RETURNING item_amount",
         [order_id, item_id], g.connection)
     if status_code != 200:
