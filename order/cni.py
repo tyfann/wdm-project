@@ -2,11 +2,11 @@ import requests
 from psycopg2 import pool
 from flask import Response
 
-URL = "http://localhost:5000"
+URL = "http://connector-service:5000"
 ##DBURL
 # db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
-# db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
-db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+# db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
 
 pool = pool.SimpleConnectionPool(1, 30, db_url)
 

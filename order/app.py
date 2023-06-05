@@ -7,12 +7,12 @@ import cni
 
 app = Flask("order-service")
 
-# stock_url = "http://stock-service:5000"
-# payment_url = "http://payment-service:5000"
+stock_url = "http://stock-service:5000"
+payment_url = "http://payment-service:5000"
 
 
-stock_url = "http://localhost:5001"
-payment_url = "http://localhost:5002"
+#stock_url = "http://localhost:5001"
+#payment_url = "http://localhost:5002"
 
 
 #  This file does not connect to DB directly, just send your SQL query to connectionI, and connectionI will send the

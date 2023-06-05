@@ -2,11 +2,11 @@ import requests
 from psycopg2 import pool
 from flask import Response
 
-URL = "http://localhost:5000"
+URL = "http://connector-service:5000"
 ##DBURL
 # db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
-# db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
-db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+db_url = "postgresql://root@cockroachdb-public:26257/defaultdb?sslmode=disable"
+# db_url = "postgresql://yufan:wejheJLUEhJ6OEDfq-NA5w@cuddly-bunny-7966.8nj.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
 
 pool = pool.SimpleConnectionPool(1, 30, db_url)
 
@@ -80,6 +80,7 @@ def get_response(db_query, param, connector):
     response = query(db_query, param, connector)
 
     if response.status_code == 200:
+
         result = response.json()
         # 判断result是否为list类型
         if isinstance(result, list):
@@ -93,6 +94,7 @@ def get_response(db_query, param, connector):
             else:
                 return result, 200
     return "Fail", 400
+
 
 
 def start_transaction():
