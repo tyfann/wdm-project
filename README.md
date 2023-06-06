@@ -37,7 +37,7 @@ Basic project structure with Python's Flask and Redis.
 * `test`
     Folder containing some basic correctness tests for the entire system. (Feel free to enhance them)
 
-### Deployment types:
+### Deployment Guidance
 
 
 
