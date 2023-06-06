@@ -32,6 +32,6 @@ Project structure with Python's Flask and CockroachDB.
 ## Deployment Guidance
 
 ### Minikube Deployment
-* ```cd k8s```
-* ```./deploy.sh```
+1. ```cd k8s```
+2. ```./deploy.sh```
 
