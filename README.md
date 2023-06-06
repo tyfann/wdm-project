@@ -39,41 +39,24 @@ Basic project structure with Python's Flask and Redis.
 
 ### Deployment types:
 
-#### docker-compose (local development)
 
-After coding the REST endpoint logic run `docker-compose up --build` in the base folder to test if your logic is correct
-(you can use the provided tests in the `\test` folder and change them as you wish). 
-
-***Requirements:*** You need to have docker and docker-compose installed on your machine.
 
 #### minikube (local k8s cluster)
 
 This setup is for local k8s testing to see if your k8s config works before deploying to the cloud. 
-First deploy your database using helm by running the `deploy-charts-minicube.sh` file (in this example the DB is Redis 
-but you can find any database you want in https://artifacthub.io/ and adapt the script). Then adapt the k8s configuration files in the
-`\k8s` folder to mach your system and then run `kubectl apply -f .` in the k8s folder. 
+ Then adapt the k8s configuration files in the `\k8s` folder to mach your system and then run `kubectl apply -f .` in the k8s folder. 
 
 ***Start Up***
-* ```minikube start --extra-config=kubelet.housekeeping-interval=10s```
-* ```minikube addons enable metrics-server```
+* ```minikube start --memory 3000```
 * ```minikube addons enable ingress```
-* ```minikube docker-env``` (Copy paste final line of output) 
-
-Image build:
-* ```docker build db-init -t db-init:latest ```
-* ```docker build db_connector -t connector:latest```
-* ```docker build order -t order:latest```
-* ```docker build stock -t stock:latest```
-* ```docker build payment -t payment:latest```
 
 #### Create the cluster
-```cd ./k8s/```
-```./create_cluster.sh```
+* ```cd ./k8s/```
+* ```kubectl apply -f .```
+#### Final step before using
+* ```kubectl get pods``` to check whether every service is deployed correctly.
+* ```minikube tunnel```  to start a tunnel.
 
-***Requirements:*** You need to have minikube (with ingress enabled) and helm installed on your machine.
-
-#### kubernetes cluster (managed k8s cluster in the cloud)
-
-Similarly to the `minikube` deployment but run the `deploy-charts-cluster.sh` in the helm step to also install an ingress to the cluster. 
+***Requirements:*** You need to have minikube (with ingress enabled) on your machine.
 
 ***Requirements:*** You need to have access to kubectl of a k8s cluster.

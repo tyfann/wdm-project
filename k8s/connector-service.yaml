@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
         - name: connector
-          image: connector:latest
-          imagePullPolicy: Never
+          image: ghcr.io/desmond766/connector:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "250Mi"

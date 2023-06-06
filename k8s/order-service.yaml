@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
         - name: order
-          image: order:latest
-          imagePullPolicy: Never
+          image: ghcr.io/desmond766/order:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "500Mi"

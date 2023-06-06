@@ -9,6 +9,6 @@ spec:
     spec:
       containers:
       - name: database-init
-        image: db-init:latest
-        imagePullPolicy: Never
+        image: ghcr.io/desmond766/db-init:latest
+        imagePullPolicy: IfNotPresent
       restartPolicy: OnFailure
