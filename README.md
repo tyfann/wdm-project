@@ -34,6 +34,8 @@ Project structure with Python's Flask and CockroachDB.
 ### Minikube Deployment
 1. ```cd k8s```
 2. ```./deploy.sh```
+3. ```kubectl get pods``` to see if all the services are running or completed (Usually takes 1-2 minutes)
+4. ```minikube tunnel``` to enable the ingress service
 
 If you meet problem of not enough memory when starting minikube, please change the first line in deploy.sh file:
 ```minikube start --memory 6800 --cpus 8``` The error response should tell you the maximum memory you can set.

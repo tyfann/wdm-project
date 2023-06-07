@@ -20,5 +20,3 @@ kubectl autoscale deployment stock-deployment --cpu-percent=50 --min=1 --max=5
 kubectl autoscale deployment order-deployment --cpu-percent=50 --min=1 --max=5
 kubectl autoscale deployment payment-deployment --cpu-percent=50 --min=1 --max=5
 kubectl autoscale deployment connector-deployment --cpu-percent=50 --min=1 --max=3
-
-minikube tunnel
