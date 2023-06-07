@@ -1,4 +1,4 @@
-minikube start --memory 8000 --cpus 8
+minikube start --memory 7900 --cpus 8
 minikube addons enable metrics-server
 minikube addons enable ingress
 kubectl delete -A ValidatingwebhookConfiguration ingress-nginx-admission
