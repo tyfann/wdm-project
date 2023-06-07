@@ -30,9 +30,6 @@ spec:
           image: ghcr.io/desmond766/order:latest
           imagePullPolicy: IfNotPresent
           resources:
-            limits:
-              memory: "500Mi"
-              cpu: "500m"
             requests:
               memory: "500Mi"
               cpu: "500m"

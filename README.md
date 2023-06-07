@@ -35,3 +35,5 @@ Project structure with Python's Flask and CockroachDB.
 1. ```cd k8s```
 2. ```./deploy.sh```
 
+If you meet problem of not enough memory when starting minikube, please change the first line in deploy.sh file:
+```minikube start --memory 6800 --cpus 8``` The error response should tell you the maximum memory you can set.
